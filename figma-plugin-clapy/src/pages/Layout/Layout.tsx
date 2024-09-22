@@ -91,33 +91,33 @@ export const LayoutInner: FC = memo(function LayoutInner() {
   //   setFirstLoginStatus();
   // }, [isSignedIn]);
 
-  if (authError) {
-    return (
-      <div className={loginHomeClasses.content}>
-        <ErrorComp error={authError} />
-      </div>
-    );
-  }
-  if (stripeLoading || stateChecking)
-    return (
-      <div className={loginHomeClasses.content}>
-        <Loading />
-        {stateChecking && <p>Checking your session...</p>}
-        {stripeLoading && (
-          <p>The payment page is opening in your browser. Please complete the payment there, then come back here 🙏</p>
-        )}
-      </div>
-    );
+  // if (authError) {
+  //   return (
+  //     <div className={loginHomeClasses.content}>
+  //       <ErrorComp error={authError} />
+  //     </div>
+  //   );
+  // }
+  // if (stripeLoading || stateChecking)
+  //   return (
+  //     <div className={loginHomeClasses.content}>
+  //       <Loading />
+  //       {stateChecking && <p>Checking your session...</p>}
+  //       {stripeLoading && (
+  //         <p>The payment page is opening in your browser. Please complete the payment there, then come back here 🙏</p>
+  //       )}
+  //     </div>
+  //   );
 
-  if (!isSignedIn && !stateChecking) return <LoginHome />;
+  // if (!isSignedIn && !stateChecking) return <LoginHome />;
 
-  if (hasMissingMetaProfile) return <FillUserProfile />;
+  // if (hasMissingMetaProfile) return <FillUserProfile />;
 
-  if (hasMissingMetaUsage) return <FillUserProfileStep2 />;
+  // if (hasMissingMetaUsage) return <FillUserProfileStep2 />;
 
-  if (isFeedbackPageActive) return <Feedback />;
+  // if (isFeedbackPageActive) return <Feedback />;
 
-  if (isPricingPageActive) return <Pricing />;
+  // if (isPricingPageActive) return <Pricing />;
 
   return (
     <>

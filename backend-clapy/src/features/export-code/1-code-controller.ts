@@ -11,27 +11,28 @@ import { exportCode } from './2-create-ts-compiler.js';
 
 @Controller('code')
 export class CodeController {
-  constructor(@Inject(UserService) private userService: UserService) {}
+  constructor(@Inject(UserService) private userService: UserService) { }
 
   @Post('export')
-  async exportCode(@Body() figmaNode: ExportCodePayload, uploadToCsb = true, @Req() req: RequestPrivate) {
-    const user: AccessTokenDecoded = req.auth;
+  async exportCode(@Body() figmaNode: ExportCodePayload, uploadToCsb = true/*, @Req() req: RequestPrivate*/) {
+    // const user: AccessTokenDecoded = req.auth;
 
-    await this.userService.checkIfCsbUploadIsDisabledWhenRoleNoCodesanboxIsAttributed(figmaNode, user);
+    // await this.userService.checkIfCsbUploadIsDisabledWhenRoleNoCodesanboxIsAttributed(figmaNode, user);
 
-    const isStripeOn = isStripeEnabled(user);
-    if (!appConfig.quotaDisabled && (env.isDev || isStripeOn)) {
-      await this.userService.checkUserOrThrow(user);
-    }
+    // const isStripeOn = isStripeEnabled(user);
+    // if (!appConfig.quotaDisabled && (env.isDev || isStripeOn)) {
+    //   await this.userService.checkUserOrThrow(user);
+    // }
 
-    const generationHistoryId = await this.userService.saveInHistoryUserCodeGeneration(figmaNode, user);
-    const res = await exportCode(figmaNode, uploadToCsb, user);
-    const res2 = await this.userService.updateUserCodeGeneration(
-      res,
-      user,
-      figmaNode.extraConfig.target,
-      generationHistoryId,
-    );
-    return res2;
+    // const generationHistoryId = await this.userService.saveInHistoryUserCodeGeneration(figmaNode, user);
+    const res = await exportCode(figmaNode, uploadToCsb, undefined/*user*/);
+    return res
+    // const res2 = await this.userService.updateUserCodeGeneration(
+    //   res,
+    //   user,
+    //   figmaNode.extraConfig.target,
+    //   generationHistoryId,
+    // );
+    // return res2;
   }
 }

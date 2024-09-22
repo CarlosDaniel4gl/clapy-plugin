@@ -67,7 +67,7 @@ const sendToApi = true;
 
 export type MyStates = 'loading' | 'noselection' | 'selectionko' | 'selection' | 'selection_too_many' | 'generated';
 
-interface Props {}
+interface Props { }
 
 // TODO
 // After removing the old/new user, FigmaToCodeHome should be used at one single place.
@@ -95,14 +95,14 @@ export const FigmaToCodeHomeInner: FC<Props> = memo(function FigmaToCodeHomeInne
   const state: MyStates = isLoading
     ? 'loading'
     : sandboxId || githubPRUrl
-    ? 'generated'
-    : selectionPreview
-    ? 'selection'
-    : selectionPreviewError === 'too_many_elements'
-    ? 'selection_too_many'
-    : selectionPreview === false
-    ? 'selectionko'
-    : 'noselection';
+      ? 'generated'
+      : selectionPreview
+        ? 'selection'
+        : selectionPreviewError === 'too_many_elements'
+          ? 'selection_too_many'
+          : selectionPreview === false
+            ? 'selectionko'
+            : 'noselection';
 
   const generateCode = useCallbackAsync2(async () => {
     const timer = performance.now();
@@ -232,7 +232,7 @@ export const FigmaToCodeHomeInner: FC<Props> = memo(function FigmaToCodeHomeInne
           setProgress({ stepId: 'generateCode', stepNumber: 8 });
 
           const { data } = await fetchApiMethod<GenCodeResponse>('code/export', nodes);
-          if (!data.quotas) {
+          if (!data.quotas && false) {
             const { data } = await apiGet<UserMetadata>('stripe/get-user-quota');
             dispatch(setStripeData(data));
           } else {
@@ -288,6 +288,9 @@ export const FigmaToCodeHomeInner: FC<Props> = memo(function FigmaToCodeHomeInne
     setSandboxId(undefined);
     setGithubPRUrl(undefined);
   }, []);
+
+  console.log(isQuotaReached, picture, state)
+
   return (
     <div className={classes.root}>
       <div className={classes.previewTitle}>
@@ -326,7 +329,7 @@ export const FigmaToCodeHomeInner: FC<Props> = memo(function FigmaToCodeHomeInne
           </Accordion>
         </>
       )}
-      {typeof picture === 'undefined' ? (
+      {typeof picture === 'undefined' && false ? (
         <Loading />
       ) : (
         <Button

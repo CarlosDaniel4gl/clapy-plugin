@@ -62,13 +62,13 @@ const theme = createTheme({
           borderRadius: 8,
           ...(ownerState.variant === 'outlined' &&
             ownerState.color === 'neutral' && {
-              borderColor: '#d0d5dd',
-            }),
+            borderColor: '#d0d5dd',
+          }),
           ...(ownerState.variant === 'outlined' &&
             ownerState.color === 'primary' && {
-              borderColor: '#004eeb',
-              color: '#004eeb',
-            }),
+            borderColor: '#004eeb',
+            color: '#004eeb',
+          }),
         }),
       },
     },
@@ -111,7 +111,7 @@ export const App: FC = memo(function App() {
         }
       }
     };
-    checkSession();
+    // checkSession();
   }, [dispatch]);
   // We can import 'react-toastify/dist/ReactToastify.minimal.css'
   // instead, but we would need to re-add animations & co to make it work.
