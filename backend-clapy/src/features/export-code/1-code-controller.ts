@@ -25,7 +25,7 @@ export class CodeController {
     // }
 
     // const generationHistoryId = await this.userService.saveInHistoryUserCodeGeneration(figmaNode, user);
-    const res = await exportCode(figmaNode, uploadToCsb, undefined/*user*/);
+    const res = await exportCode(figmaNode/*user*/);
     return res
     // const res2 = await this.userService.updateUserCodeGeneration(
     //   res,

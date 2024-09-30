@@ -49,11 +49,12 @@ export const PreviewMode: FC<Props> = memo(function PreviewMode({ children }) {
 
   return (
     <div className={styles.previewApp}>
-      <h3>Preview App</h3>
+      {/* <h3>Preview App</h3>
       <div className={styles.previewConnectionInfo}>
         <strong>Connection Status:</strong>
-        <div className={`${styles.previewConnectionStatus} ${isConnected ? styles.statusGreen : ''}`} />
-      </div>
+      <div className={`${styles.previewConnectionStatus} ${isConnected ? styles.statusGreen : ''}`} />
+      </div> */}
+      <div>{isConnected ? '🔋' : '🪫'}</div>
 
       {env.isPreviewInBrowser && (
         /* setIsConnected && */ <div id='clapy-devpreview-wrapper' className={styles.previewPluginWrapper}>

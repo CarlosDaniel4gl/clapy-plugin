@@ -1,12 +1,13 @@
-
 .previewApp {
-  padding: 2rem;
+  padding: 0;
+  /* padding: 2rem; */
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   flex: 1;
 }
+
 .previewConnectionInfo {
   display: flex;
   flex-direction: row;
@@ -14,6 +15,7 @@
   align-self: center;
   margin-bottom: 16px;
 }
+
 .previewPluginWrapper {
   position: relative;
   contain: content;
@@ -26,10 +28,12 @@
   /* Must match resets.css #react-page for children-oriented styles */
   display: flex;
 }
+
 .select-warning {
   text-align: center;
   color: #4a4848;
 }
+
 .previewConnectionStatus {
   border-radius: 50px/50px;
   background-color: #f00;
@@ -37,6 +41,7 @@
   height: 12px;
   margin-left: 8px;
 }
+
 .statusGreen {
   background-color: lawngreen;
 }

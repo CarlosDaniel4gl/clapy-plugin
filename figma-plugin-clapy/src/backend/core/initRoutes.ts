@@ -9,6 +9,7 @@ import type {
 import { env } from '../../environment/env';
 
 export function initRoutes(routes: Routes) {
+  figma.ui.resize(70, 25); //min width 70
   figma.ui.onmessage = async ({ __id, type, payload, noResponse }: RequestMessage, props) => {
     const handler = routes[type] as (...args: any) => any;
     if (!handler) throw new Error(`Unknown message type for message: ${JSON.stringify({ type, payload })}`);

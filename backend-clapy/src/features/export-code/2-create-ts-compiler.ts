@@ -43,28 +43,17 @@ function getCSSVariablesFileName(cssExt: string) {
 
 const enableMUIInDev = false;
 
-export async function exportCode(
-  { root, components, svgs, images, styles, extraConfig, tokens, page, githubAccessToken }: ExportCodePayload,
-  uploadToCsb = true,
-  user: AccessTokenDecoded,
-) {
-  if (env.localPreviewInsteadOfCsb) {
-    uploadToCsb = false;
-  }
+export async function exportCode({ root, components, svgs, images, styles, extraConfig, tokens, page, githubAccessToken }: ExportCodePayload) {
 
   // Legacy zip setting
-  if (!extraConfig.target) {
-    extraConfig.target = extraConfig.zip ? UserSettingsTarget.zip : UserSettingsTarget.csb;
-  }
+  if (!extraConfig.target) extraConfig.target = extraConfig.zip ? UserSettingsTarget.zip : UserSettingsTarget.csb;
   // /Legacy
-
   extraConfig.useZipProjectTemplate = env.localPreviewInsteadOfCsb || extraConfig.target !== UserSettingsTarget.csb;
-  const fwConnector = frameworkConnectors[extraConfig.framework || 'react'];
-  if (extraConfig.framework === 'angular' && !extraConfig.angularPrefix) {
-    extraConfig.angularPrefix = 'cl';
-  }
+  const fwConnector = frameworkConnectors['react'];
 
+  // Figma
   const parent = (root as any)?.parent as ParentNode | Nil;
+
   const instancesInComp: InstanceNode2[] = [];
   for (const comp of components) {
     fillWithDefaults((comp as any)?.parent, instancesInComp, true);
