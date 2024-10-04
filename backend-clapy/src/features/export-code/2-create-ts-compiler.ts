@@ -186,6 +186,32 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     // console.log(csbFiles[`${srcCompPrefix}${compName}/${compName}.tsx`].content);
     //
     // console.log(project.getSourceFile('/src/App.tsx')?.getFullText());
+
+    // 4GLRules
+    // Para los figma comp with absolute pos and bottom 0 and fill with
+    Object.keys(csbFiles).filter(k => k.includes('.module.css')).forEach(k => {
+      let isClass = false
+      let absolute: number | undefined = undefined
+      let bottom = false
+      let width: number | undefined = undefined
+      csbFiles[k].content?.split('\n').forEach((l, i) => {
+        if (l.includes('{')) isClass = true
+        else if (l.includes('position: absolute;')) absolute = i
+        else if (l.includes('bottom:')) bottom = true
+        else if (l.includes('width:')) width = i
+        else if (l.includes('}') && (!bottom || !width || !absolute)) {
+          isClass = false
+          absolute = undefined
+          bottom = false
+          width = undefined
+        }
+        else if (l.includes('}') && bottom && width && absolute) {
+          csbFiles[k].content = csbFiles[k].content.split('\n').map((l, i) => i === width ? l.replace(/width: \w+;/, '') : l).join('\n')
+          csbFiles[k].content = csbFiles[k].content.split('\n').map((l, i) => i === absolute ? l.replace('position: absolute;', 'position: fixed;') : l).join('\n')
+        }
+      })
+    })
+
     perfMeasure('k');
     await writeToDisk(csbFiles, (root as SceneNode2).componentContext!, extraConfig.isClapyFile); // Takes time with many files
     perfMeasure('l');
@@ -196,21 +222,21 @@ export async function exportCode({ root, components, svgs, images, styles, extra
       400,
     );
   }
-  if (!env.isDev || uploadToCsb || extraConfig.target !== UserSettingsTarget.csb) {
-    const isNoCodesandboxUser = hasRoleNoCodeSandbox(user);
-    if (extraConfig.target === UserSettingsTarget.zip) {
-      const zipResponse = await makeZip(csbFiles);
-      return new StreamableFile(zipResponse as Readable);
-    } else if (extraConfig.target === UserSettingsTarget.github) {
-      return sendCodeToGithub(projectContext, githubAccessToken, user, csbFiles);
-    } else {
-      if (isNoCodesandboxUser) {
-        throw new Error("You don't have the permission to upload the generated code to CodeSandbox.");
-      }
-      const csbResponse = await uploadToCSB(csbFiles);
-      return csbResponse;
-    }
-  }
+  // if (!env.isDev || uploadToCsb || extraConfig.target !== UserSettingsTarget.csb) {
+  //   const isNoCodesandboxUser = hasRoleNoCodeSandbox(user);
+  //   if (extraConfig.target === UserSettingsTarget.zip) {
+  //     const zipResponse = await makeZip(csbFiles);
+  //     return new StreamableFile(zipResponse as Readable);
+  //   } else if (extraConfig.target === UserSettingsTarget.github) {
+  //     return sendCodeToGithub(projectContext, githubAccessToken, user, csbFiles);
+  //   } else {
+  //     if (isNoCodesandboxUser) {
+  //       throw new Error("You don't have the permission to upload the generated code to CodeSandbox.");
+  //     }
+  //     const csbResponse = await uploadToCSB(csbFiles);
+  //     return csbResponse;
+  //   }
+  // }
   return { sandbox_id: 'false' } as CSBResponse;
 }
 

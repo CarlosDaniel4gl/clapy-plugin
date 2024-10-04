@@ -4,5 +4,5 @@
   background-color: __backgroundColor__;
   flex-basis: 100%;
   overflow-y: auto;
-  /* __center__ */
+  align-items: start;
 }
