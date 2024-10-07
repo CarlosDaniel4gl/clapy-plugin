@@ -23,6 +23,7 @@ export function getOrGenComponent(
   parent: ParentNode | Nil,
   isRootComponent = false,
   skipAddImport = false,
+  isScreen = false
 ) {
   const {
     projectContext: { compNodes, components },
@@ -39,6 +40,7 @@ export function getOrGenComponent(
       parent,
       isRootComponent,
       isEmbeddedComponent,
+      isScreen
     );
     components.set(comp?.id || '_root', moduleContext);
     if (!skipAddImport) {
@@ -55,6 +57,7 @@ export function getOrGenComponent(
       parent,
       isRootComponent,
       !isPage(comp.parent),
+      isScreen
     );
     components.set(comp.id, moduleContext);
   }
@@ -148,6 +151,7 @@ function createModuleContextForNode(
   parent: ParentNode | Nil,
   isRootComponent = false,
   isEmbeddedComponent = false,
+  isScreen = false
 ) {
   const { projectContext } = parentModuleContext;
   const { fwConnector } = projectContext;
@@ -160,7 +164,9 @@ function createModuleContextForNode(
   const compDirName = fwConnector.getCompDirName(baseCompName);
   // const compFileName = fwConnector.getCompFileName(compDirName);
   const compDirPath = getComponentsDirPath(projectContext);
-  const compDir = pageDir ? `${compDirPath}${pageDir}/${compDirName}` : `${compDirPath}${compDirName}`;
+  const screenDirPath = 'src/figma/screens';
+  // const compDir = pageDir ? `${compDirPath}${pageDir}/${compDirName}` : `${compDirPath}${compDirName}`;
+  const compDir = isScreen ? `${screenDirPath}/${compDirName}` : `${compDirPath}${compDirName}`;
 
   const moduleContext = mkModuleContext(
     projectContext,

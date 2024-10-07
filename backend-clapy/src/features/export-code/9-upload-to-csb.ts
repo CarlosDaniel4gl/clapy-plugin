@@ -27,6 +27,14 @@ export async function uploadToCSB(files: CsbDict) {
   return data;
 }
 
+export async function listScreens() {
+  try {
+    return await readdir(`${localGenClapyDir}/src/figma/screens`)
+  } catch {
+    return []
+  }
+}
+
 export async function makeZip(files: CsbDict) {
   // Sample from: https://stuk.github.io/jszip/ - repo: https://github.com/Stuk/jszip
   const zip = new JSZip();
@@ -129,7 +137,7 @@ export async function writeToDisk(
       globsToClean.map(g => globPromise(resolve(g), { ignore: filePaths })),
     );
     const allFilesMatches = [...srcMatches, ...(publicMatches || []), ...(clapyMatches || [])];
-    await Promise.all(allFilesMatches.map(match => unlink(match)));
+    // await Promise.all(allFilesMatches.map(match => unlink(match)));
 
     // Then remove empty folders
     await Promise.all(dirsToClean.map(dir => cleanEmptyFoldersRecursively(dir)));

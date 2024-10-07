@@ -57,9 +57,10 @@ const { factory } = ts;
 
 const csbDir = `${exportTemplatesDir}/react-cra`;
 const zipDir = `${exportTemplatesDir}/react-vite`;
+const gl4Dir = `${exportTemplatesDir}/react-4gl`;
 
 export const reactConnector: FrameworkConnector = {
-  templateBaseDirectory: extraConfig => (extraConfig.useZipProjectTemplate ? zipDir : csbDir),
+  templateBaseDirectory: extraConfig => gl4Dir, //(extraConfig.useZipProjectTemplate ? zipDir : csbDir),
   getIndexHtmlPath: ({ useZipProjectTemplate }) => (useZipProjectTemplate ? 'index.html' : 'public/index.html'),
   enableInstanceOverrides: true,
   patchProjectConfigFiles: (projectContext, extraConfig) => {
@@ -135,7 +136,7 @@ export const reactConnector: FrameworkConnector = {
   genCompUsage,
   createSvgTag: (svgPathVarName, svgAttributes) =>
     mkComponentUsage(svgPathVarName, svgAttributes as ts.JsxAttribute[] | undefined),
-  addExtraSvgAttributes: () => {},
+  addExtraSvgAttributes: () => { },
   writeRootCompFileCode(appModuleContext, compAst, appCssPath, parent) {
     const { statements, projectContext } = appModuleContext;
     const { extraConfig } = projectContext;
@@ -180,7 +181,7 @@ export const reactConnector: FrameworkConnector = {
     }
   },
   writeSVGReactComponents,
-  cleanUpProject: () => {},
+  cleanUpProject: () => { },
 };
 
 function wrapHideAndTextOverride<T extends boolean>(

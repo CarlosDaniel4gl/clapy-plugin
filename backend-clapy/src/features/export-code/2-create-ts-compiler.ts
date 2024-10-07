@@ -16,7 +16,7 @@ import { hasRoleNoCodeSandbox } from '../user/user.utils.js';
 import { createNodeContext, generateAllComponents, mkModuleContext } from './3-gen-component.js';
 import { formatTsFiles, prepareCssFiles, prepareHtmlFiles } from './8-format-ts-files.js';
 import type { CSBResponse } from './9-upload-to-csb.js';
-import { makeZip, patchViteJSConfigForDev, uploadToCSB, writeToDisk } from './9-upload-to-csb.js';
+import { listScreens, makeZip, patchViteJSConfigForDev, uploadToCSB, writeToDisk } from './9-upload-to-csb.js';
 import type { ModuleContext, ParentNode, ProjectContext } from './code.model.js';
 import { readTemplateFile, readTemplateFiles } from './create-ts-compiler/0-read-template-files.js';
 import { toCSBFiles } from './create-ts-compiler/9-to-csb-files.js';
@@ -50,6 +50,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
   // /Legacy
   extraConfig.useZipProjectTemplate = env.localPreviewInsteadOfCsb || extraConfig.target !== UserSettingsTarget.csb;
   const fwConnector = frameworkConnectors['react'];
+  extraConfig.componentsDir = 'src/figma/components' //extraConfig.componentsDir
 
   // Figma
   const parent = (root as any)?.parent as ParentNode | Nil;
@@ -188,6 +189,25 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     // console.log(project.getSourceFile('/src/App.tsx')?.getFullText());
 
     // 4GLRules
+    // Nos quedamos con App.js templante
+    csbFiles['src/App.tsx'] = csbFiles['src/AppTemplate.tsx']
+    delete csbFiles['src/AppTemplate.tsx']
+    // Actualizamos los imports y las rutas de las screens en mainrouter
+    const screens = await listScreens() as string[]
+    csbFiles['src/routes/screens.tsx'].content = `${screens
+      .map(s => `import { ${s} } from '../figma/screens/${s}/${s}'`)
+      .join('\n')}\n`
+    csbFiles['src/routes/screens.tsx'].content += `${Object.keys(csbFiles)
+      .filter(k => k.includes('src/figma/screens/') && k.includes('.tsx') && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || '')))
+      .map(s => `import { ${s.split('.tsx')[0].split('/').pop()} } from '../figma/screens/${s.split('.tsx')[0].split('/').pop()}/${s.split('.tsx')[0].split('/').pop()}'`)
+      .join('\n')}\n`
+    csbFiles['src/routes/screens.tsx'].content += `export const screens = [\n${screens
+      .map(s => `{route: '${s.split('Screen')[0]}', component: <${s}/>}`)
+      .join(',\n')},\n`
+    csbFiles['src/routes/screens.tsx'].content += `${Object.keys(csbFiles)
+      .filter(k => k.includes('src/figma/screens/') && k.includes('.tsx') && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || '')))
+      .map(s => `{route: '${s.split('Screen')[0].split('/').pop()}', component: <${s.split('.tsx')[0].split('/').pop()}/>}`)
+      .join(',\n')}\n]`
     // Para los figma comp with absolute pos and bottom 0 and fill with
     Object.keys(csbFiles).filter(k => k.includes('.module.css')).forEach(k => {
       let isClass = false

@@ -10,9 +10,10 @@ export function prepareCompUsageWithOverrides(context: NodeContext, node: SceneN
     projectContext: { fwConnector },
   } = moduleContext;
   const isInst = isInstance(node);
+  const isScreen = parentNode ? parentNode['name'].includes('Screen') : false
 
   // If component or instance, generate the code in a separate component file and reference it here.
-  const componentContext = getOrGenComponent(moduleContext, node, parentNode, isRootComponent);
+  const componentContext = getOrGenComponent(moduleContext, node, parentNode, isRootComponent, undefined, isScreen);
 
   node.componentContext = componentContext;
 
