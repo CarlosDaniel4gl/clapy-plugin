@@ -296,9 +296,7 @@ export function mkPropInterface(moduleContext: ModuleContext) {
             ),
           ),
         ]),
-      ...(!hidePropNames?.length
-        ? []
-        : [
+      ...(hidePropNames?.length ? [
           factory.createPropertySignature(
             undefined,
             factory.createIdentifier('hide'),
@@ -314,10 +312,8 @@ export function mkPropInterface(moduleContext: ModuleContext) {
               ),
             ),
           ),
-        ]),
-      ...(!textOverridePropNames?.length
-        ? []
-        : [
+        ] : []),
+      ...(textOverridePropNames?.length? [
           factory.createPropertySignature(
             undefined,
             factory.createIdentifier('text'),
@@ -333,7 +329,7 @@ export function mkPropInterface(moduleContext: ModuleContext) {
               ),
             ),
           ),
-        ]),
+        ] : []),
       ...(Array.from(onClickOverrideProps).length > 0 ? [
         factory.createPropertySignature(
           undefined,
@@ -475,7 +471,7 @@ export function mkCompFunction(
                         factory.createVariableDeclaration(
                           factory.createObjectBindingPattern([
                             // Texts
-                            !!hasUseText && factory.createBindingElement(undefined, undefined, factory.createIdentifier('text')),
+                            /*!!hasUseText && */factory.createBindingElement(undefined, undefined, factory.createIdentifier('text')),
                             // !!textOverridePropNames?.length && factory.createBindingElement(
                             //   undefined,
                             //   factory.createIdentifier('text'),
@@ -742,7 +738,7 @@ export function mkWrapHideAndTextOverrideAst<T extends boolean>(
   context: NodeContext,
   ast: JsxOneOrMore | undefined,
   node: SceneNode2,
-  isJsExprAllowed: T,
+  isJsExprAllowed: T, 
 ): T extends true
   ? JsxOneOrMore | ts.BinaryExpression | ts.ConditionalExpression | undefined
   : JsxOneOrMore | undefined {

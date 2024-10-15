@@ -59,11 +59,14 @@ export function getOrGenHideProp(componentContext: ModuleContext, node?: SceneNo
 
 export function getOrGenTextOverrideProp(
   componentContext: ModuleContext,
-  node?: SceneNode2,
+  node?: SceneNode2, 
   textOverrideBaseName?: string,
 ) {
-  if (node?.textOverrideProp) {
-    return node.textOverrideProp;
+  const compName = componentContext.compName
+  const baseCompName = componentContext.baseCompName
+  const nodeTextOverrideProp = node?.textOverrideProp
+  if (nodeTextOverrideProp) {
+    return nodeTextOverrideProp;
   }
   if (!node?.name && !textOverrideBaseName) {
     throw new Error(

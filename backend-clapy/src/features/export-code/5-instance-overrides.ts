@@ -78,15 +78,18 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
 
     let styles: Dict<DeclarationPlain> = {};
     node.styles = styles;
+    const visible = node.visible
 
     // Not sure the below return is useful. To review with more test cases.
-    if (!node.visible && context.isRootInComponent) {
+    if (!visible && context.isRootInComponent) {
       // It happens, we stop here. We may just need to ensure the instance node has a hideProp true on it.
-      return;
+      // return;
+      console.log('')
     }
-    addHideOverride(context, node);
+    addHideOverride(context, node); 
     if (!node.visible) {
-      return;
+      //return;
+      console.log('')
     }
 
     if (!isRootInComponent) {
@@ -170,8 +173,13 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
       addOnClickOverride(context, node, styles);
     }
 
+    if (baseCompName.includes('Modal'))
+        console.log('') 
+
     if (isText(node)) {
       context.notOverridingAnotherClass = true;
+      if (baseCompName.includes('Modal'))
+        console.log('') 
       addTextOverride(context, node, styles);
     }
     else if (isVector(node)) {
@@ -540,7 +548,7 @@ function addHideOverride2(
 }
 
 function addTextOverride(context: InstanceContext, node: TextNode2, styles: Dict<DeclarationPlain>) {
-  let { intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps } = context;
+  let { intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps, componentContext: {baseCompName} } = context;
 
   // Check that the text of current node changed vs the next intermediate component
   const nextIntermediateNode = intermediateNodes[1];
