@@ -380,7 +380,7 @@ export function mkCompFunction(
   prefixStatements: Statement[] = [],
   skipAnnotation?: boolean,
 ) {
-  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick } = moduleContext;
+  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick, hideProps } = moduleContext;
   const textOverridePropNames = Array.from(textOverrideProps);
   const classes = Array.from(classOverrides);
   let returnedExpression = jsxOneOrMoreToJsxExpression(tsx);
@@ -389,6 +389,7 @@ export function mkCompFunction(
   const hasOnClickChild = Array.from(onClickOverrideProps).length > 0
   const hasUseOnClick = hasOnClick || hasOnClickChild || isScreen
   const hasUseText = textOverridePropNames?.length || isScreen
+  const hasHidde = Array.from(hideProps).length > 0 || isScreen
 
   // Create the component function as AST node
   const componentVariableStatement = factory.createVariableStatement(
@@ -485,7 +486,8 @@ export function mkCompFunction(
                             //   ),
                             // ),
                             // OnClick
-                            !!hasUseOnClick && factory.createBindingElement(undefined, undefined, factory.createIdentifier('clicks'))
+                            !!hasUseOnClick && factory.createBindingElement(undefined, undefined, factory.createIdentifier('clicks')),
+                            !!hasHidde && factory.createBindingElement(undefined, undefined, factory.createIdentifier('hide'))
                           ].filter(o => !!o)),
                           undefined,
                           undefined,
@@ -715,7 +717,8 @@ function mkWrapHideExprFragment<T extends JsxOneOrMore | ts.Expression | undefin
     hideDefaultValue = true;
   }
   const hidePropVar = factory.createPropertyAccessChain(
-    factory.createPropertyAccessExpression(factory.createIdentifier('props'), factory.createIdentifier('hide')),
+    // factory.createPropertyAccessExpression(factory.createIdentifier('props'), factory.createIdentifier('hide')),
+    factory.createIdentifier('hide'),
     factory.createToken(ts.SyntaxKind.QuestionDotToken),
     factory.createIdentifier(node.hideProp),
   );
