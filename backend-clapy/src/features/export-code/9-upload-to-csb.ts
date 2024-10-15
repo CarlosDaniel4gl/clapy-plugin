@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { createWriteStream } from 'fs';
-import { lstat, mkdir, readdir, rmdir, unlink, writeFile } from 'fs/promises';
+import { lstat, mkdir, readdir, rmdir, unlink, writeFile, access } from 'fs/promises';
 import JSZip from 'jszip';
 import { dirname, join, resolve } from 'path';
 import * as stream from 'stream';
@@ -112,7 +112,28 @@ export async function writeToDisk(
     }),
   );
   // Write all files in parallel here to avoid webpack bugs, not detecting some files while re-bundling because they are written too late.
-  await Promise.all(Object.entries(filesToWrite).map(([path, content]) => writeFile(path, content)));
+  async function fileExists(path: string) {
+    try {
+      await access(path);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+  await Promise.all(Object.entries(filesToWrite)
+    .filter(async ([path, content]) => {
+      const isUse = !path.includes('figma') ||
+        !path.includes('use') ||
+        !await fileExists(path)
+      return isUse
+    })
+    .map(([path, content]) => {
+      fileExists(path).then(isUseWrited => {
+        const isNotUse = !path.includes('figma') || !path.includes('use')
+        return (isNotUse || !isUseWrited) && writeFile(path, content)
+      })
+    }
+    ));
 
   // List files and directories to clean up
   const dirsToClean = [

@@ -116,6 +116,7 @@ interface GlobalExtender2 extends GlobalExtender {
   foundIntermediateSwap?: boolean;
   hideProp?: string;
   textOverrideProp?: string;
+  onClickOverrideProp?: string
   parent?: (BaseNode & ChildrenMixin) | null;
   autoWidth?: boolean;
   autoHeight?: boolean;

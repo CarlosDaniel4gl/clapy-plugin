@@ -37,6 +37,7 @@ import {
   mkInputTypeAttr,
   mkNamedImportsDeclaration,
   mkNoReferrerAttr,
+  mkOnClickOverridesAttribute,
   mkPropInterface,
   mkSwapInstanceAlone,
   mkSwapInstanceAndHideWrapper,
@@ -97,7 +98,7 @@ export const reactConnector: FrameworkConnector = {
   mkSelector: (context, className, customSelector) =>
     mkRawCss(customSelector ? customSelector.replaceAll('_class_', `.${className}`) : `.${className}`),
   createNodeTag: (context, attributes, children, node) => {
-    const ast2 = mkTag(context.tagName, attributes as ts.JsxAttribute[], children as ts.JsxChild[]);
+    const ast2 = mkTag(context.tagName, attributes as ts.JsxAttribute[], children as ts.JsxChild[], context.moduleContext.hasOnClick && context.isRootInComponent);
     return wrapHideAndTextOverride(context, ast2, node, false);
   },
   mkSwapInstanceAlone: (context, ast, node) => mkSwapInstanceAlone(context, ast as ts.JsxSelfClosingElement, node),
@@ -109,7 +110,7 @@ export const reactConnector: FrameworkConnector = {
     mkTag(tagName, attributes as ts.JsxAttribute[], (Array.isArray(node) ? node : [node]) as ts.JsxChild[]),
   writeFileCode: (ast, moduleContext) => {
     const { projectContext, compDir, compName, imports } = moduleContext;
-    const { cssFiles } = projectContext;
+    const { cssFiles, tsFiles } = projectContext;
 
     const [tsx, css] = ast;
 
@@ -120,6 +121,10 @@ export const reactConnector: FrameworkConnector = {
         ChildNode | ChildNode[] | (JsxChild | ChildNode)[] | ts.BinaryExpression | ts.ConditionalExpression
       >,
     );
+
+    // Create use/<component/>() file 
+    const tsFileName = `use${compName}.tsx`;
+    tsFiles[`${compDir}/${tsFileName}`] = `export const use${compName} = (props: any) => { /*👨‍💻 Your code here...*/ return { ...props } };`
 
     const cssExt = getCSSExtension(projectContext);
     if (isNonEmptyObject(css.children)) {
@@ -213,6 +218,9 @@ function createModuleCode(
     true,
   );
 
+  // Add use/<component/>() import
+  imports[`use${compName}`] = mkNamedImportsDeclaration([`use${compName}`], `./use${compName}`);
+
   // Add component Prop interface
   statements.push(mkPropInterface(moduleContext));
 
@@ -265,10 +273,14 @@ function genInstanceLikeAst(node: SceneNode2, extraAttributes: ts.JsxAttribute[]
 }
 
 export function createComponentUsageWithAttributes(compContext: CompContext, componentModuleContext: ModuleContext) {
-  const { instanceSwaps, instanceHidings, instanceStyleOverrides, instanceTextOverrides } = compContext;
+  const { instanceSwaps, instanceHidings, instanceStyleOverrides, instanceTextOverrides, instanceOnClickOverrides } = compContext;
   const {
     projectContext: { extraConfig },
+    hasOnClick,
+    node: { id },
   } = componentModuleContext;
+
+  const wwwwwswwss = componentModuleContext
 
   const attrs = [];
 
@@ -300,6 +312,10 @@ export function createComponentUsageWithAttributes(compContext: CompContext, com
 
   const textOverrideAttr = mkTextOverridesAttribute(instanceTextOverrides);
   if (textOverrideAttr) attrs.push(textOverrideAttr);
+
+  const onClickOverrideAttr = mkOnClickOverridesAttribute(instanceOnClickOverrides, id as string);
+  if (onClickOverrideAttr)
+    attrs.push(onClickOverrideAttr);
 
   return mkComponentUsage(componentModuleContext.compName, attrs);
 }

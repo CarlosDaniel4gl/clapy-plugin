@@ -78,6 +78,7 @@ export interface ModuleContext {
   readonly compDir: string;
   readonly compName: string;
   readonly baseCompName: string;
+  readonly hasOnClick: boolean | undefined;
   readonly classNamesAlreadyUsed: Set<string>;
   // In a component, lists the nodes for which a prop can override the class. It is used to generate the list of props in the component source.
   readonly classOverrides: Set<string>;
@@ -94,6 +95,7 @@ export interface ModuleContext {
   readonly isRootComponent?: boolean;
   readonly hideProps: Set<string>;
   readonly textOverrideProps: Set<string>;
+  readonly onClickOverrideProps: Set<string>;
 }
 
 export type ParentNode = FlexNode | GroupNode2 | PageNode2;
@@ -153,6 +155,9 @@ export type HideOverride = FigmaOverride<boolean>;
 
 export type TextOverride = FigmaOverride<JsxOneOrMore>;
 
+export type OnClickOverrie = FigmaOverride<string>;
+export type BaseOnClickOverrie = BaseFigmaOverride<string>;
+
 export interface OverrideProps {
   instanceNodeOfComp: SceneNode2; // For debug only - to remove later?
   propValue: string;
@@ -164,6 +169,7 @@ export interface CompContext {
   instanceHidings: Dict<HideOverride>;
   instanceSwaps: Dict<SwapOverride>;
   instanceTextOverrides: Dict<TextOverride>;
+  instanceOnClickOverrides: Dict<OnClickOverrie>;
 }
 
 export interface IntermediateComponent {

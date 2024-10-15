@@ -6,20 +6,15 @@ import { isInstance } from '../create-ts-compiler/canvas-utils.js';
 
 export function prepareCompUsageWithOverrides(context: NodeContext, node: SceneNode2, isRootComponent = false) {
   const { parentNode, moduleContext } = context;
-  const {
-    projectContext: { fwConnector },
-  } = moduleContext;
+  const { projectContext: { fwConnector }, } = moduleContext;
   const isInst = isInstance(node);
   const isScreen = parentNode ? parentNode['name'].includes('Screen') : false
 
   // If component or instance, generate the code in a separate component file and reference it here.
   const componentContext = getOrGenComponent(moduleContext, node, parentNode, isRootComponent, undefined, isScreen);
-
   node.componentContext = componentContext;
-
-  if (!fwConnector.enableInstanceOverrides || !isInst) {
+  if (!fwConnector.enableInstanceOverrides || !isInst)
     return componentContext;
-  }
 
   const instanceNode = node as ComponentNode2 | InstanceNode2;
   // Get the styles for all instance overrides. Styles only, for all nodes. No need to generate any AST.

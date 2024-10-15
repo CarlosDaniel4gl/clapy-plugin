@@ -78,6 +78,24 @@ export function getOrGenTextOverrideProp(
   return textOverrideProp;
 }
 
+export function getOrGenOnClickOverrideProp(
+  componentContext: ModuleContext,
+  node?: SceneNode2,
+  onClickOverrideBaseName?: string,
+) {
+  if (!node?.name && !onClickOverrideBaseName) {
+    throw new Error(
+      `Either a node with a name or a onClickOverrideBaseName is required to generate a textOverrideProp on module ${componentContext.compName}`,
+    );
+  }
+  const baseName = 'onClick' //node?.name || onClickOverrideBaseName!;
+  const onClickOverrideProp = genUniqueName(componentContext.onClickOverrideProps, baseName);
+  if (node) {
+    node.onClickOverrideProp = onClickOverrideProp;
+  }
+  return onClickOverrideProp;
+}
+
 export function genIconComponentImportName(
   context: NodeContext,
   textCase: TextCase = TextCase.Pascal,

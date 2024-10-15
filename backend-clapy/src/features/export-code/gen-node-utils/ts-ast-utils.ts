@@ -5,8 +5,9 @@ import ts from 'typescript';
 import { flags } from '../../../env-and-config/app-config.js';
 import { env } from '../../../env-and-config/env.js';
 import { warnOrThrow } from '../../../utils.js';
-import type { ExtraConfig, SceneNodeNoMethod } from '../../sb-serialize-preview/sb-serialize.model.js';
+import { nodeDefaults, type ExtraConfig, type SceneNodeNoMethod } from '../../sb-serialize-preview/sb-serialize.model.js';
 import type {
+  BaseOnClickOverrie,
   BaseStyleOverride,
   CompContext,
   FigmaOverride,
@@ -14,6 +15,7 @@ import type {
   JsxOneOrMore,
   ModuleContext,
   NodeContext,
+  OnClickOverrie,
   StyleOverride,
 } from '../code.model.js';
 import type { RulePlainExtended, SceneNode2 } from '../create-ts-compiler/canvas-utils.js';
@@ -149,6 +151,7 @@ export function getOrCreateCompContext(node: SceneNode2) {
       instanceHidings: {},
       instanceSwaps: {},
       instanceTextOverrides: {},
+      instanceOnClickOverrides: {},
     };
   }
   return node._context;
@@ -223,10 +226,10 @@ export function mkNamedImportsDeclaration(
           typeof name === 'string'
             ? factory.createImportSpecifier(false, undefined, factory.createIdentifier(name))
             : factory.createImportSpecifier(
-                false,
-                factory.createIdentifier(name[0]),
-                factory.createIdentifier(name[1]),
-              ),
+              false,
+              factory.createIdentifier(name[0]),
+              factory.createIdentifier(name[1]),
+            ),
         ),
       ),
     ),
@@ -236,15 +239,16 @@ export function mkNamedImportsDeclaration(
 }
 
 export function mkPropInterface(moduleContext: ModuleContext) {
-  const { classOverrides, swaps, hideProps, textOverrideProps } = moduleContext;
+  const { classOverrides, swaps, hideProps, textOverrideProps, compName, hasOnClick, onClickOverrideProps } = moduleContext;
   const classes = Array.from(classOverrides);
   const swapsArr = Array.from(swaps);
   const hidePropNames = Array.from(hideProps);
   const textOverridePropNames = Array.from(textOverrideProps);
+  const isScreen = compName.includes('Screen')
   return factory.createInterfaceDeclaration(
     undefined,
     undefined,
-    factory.createIdentifier('Props'),
+    factory.createIdentifier(`${compName}Props`),
     undefined,
     undefined,
     [
@@ -257,79 +261,100 @@ export function mkPropInterface(moduleContext: ModuleContext) {
       ...(!classes?.length
         ? []
         : [
-            factory.createPropertySignature(
-              undefined,
-              factory.createIdentifier('classes'),
-              factory.createToken(ts.SyntaxKind.QuestionToken),
-              factory.createTypeLiteralNode(
-                classes.map(classOverride =>
-                  factory.createPropertySignature(
-                    undefined,
-                    factory.createIdentifier(classOverride),
-                    factory.createToken(ts.SyntaxKind.QuestionToken),
-                    factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
-                  ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createIdentifier('classes'),
+            factory.createToken(ts.SyntaxKind.QuestionToken),
+            factory.createTypeLiteralNode(
+              classes.map(classOverride =>
+                factory.createPropertySignature(
+                  undefined,
+                  factory.createIdentifier(classOverride),
+                  factory.createToken(ts.SyntaxKind.QuestionToken),
+                  factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
                 ),
               ),
             ),
-          ]),
+          ),
+        ]),
       ...(!swapsArr?.length
         ? []
         : [
-            factory.createPropertySignature(
-              undefined,
-              factory.createIdentifier('swap'),
-              factory.createToken(ts.SyntaxKind.QuestionToken),
-              factory.createTypeLiteralNode(
-                swapsArr.map(swap =>
-                  factory.createPropertySignature(
-                    undefined,
-                    factory.createIdentifier(swap),
-                    factory.createToken(ts.SyntaxKind.QuestionToken),
-                    factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
-                  ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createIdentifier('swap'),
+            factory.createToken(ts.SyntaxKind.QuestionToken),
+            factory.createTypeLiteralNode(
+              swapsArr.map(swap =>
+                factory.createPropertySignature(
+                  undefined,
+                  factory.createIdentifier(swap),
+                  factory.createToken(ts.SyntaxKind.QuestionToken),
+                  factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
                 ),
               ),
             ),
-          ]),
+          ),
+        ]),
       ...(!hidePropNames?.length
         ? []
         : [
-            factory.createPropertySignature(
-              undefined,
-              factory.createIdentifier('hide'),
-              factory.createToken(ts.SyntaxKind.QuestionToken),
-              factory.createTypeLiteralNode(
-                hidePropNames.map(name =>
-                  factory.createPropertySignature(
-                    undefined,
-                    factory.createIdentifier(name),
-                    factory.createToken(ts.SyntaxKind.QuestionToken),
-                    factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
-                  ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createIdentifier('hide'),
+            factory.createToken(ts.SyntaxKind.QuestionToken),
+            factory.createTypeLiteralNode(
+              hidePropNames.map(name =>
+                factory.createPropertySignature(
+                  undefined,
+                  factory.createIdentifier(name),
+                  factory.createToken(ts.SyntaxKind.QuestionToken),
+                  factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
                 ),
               ),
             ),
-          ]),
+          ),
+        ]),
       ...(!textOverridePropNames?.length
         ? []
         : [
-            factory.createPropertySignature(
-              undefined,
-              factory.createIdentifier('text'),
-              factory.createToken(ts.SyntaxKind.QuestionToken),
-              factory.createTypeLiteralNode(
-                textOverridePropNames.map(name =>
-                  factory.createPropertySignature(
-                    undefined,
-                    factory.createIdentifier(name),
-                    factory.createToken(ts.SyntaxKind.QuestionToken),
-                    factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
-                  ),
+          factory.createPropertySignature(
+            undefined,
+            factory.createIdentifier('text'),
+            factory.createToken(ts.SyntaxKind.QuestionToken),
+            factory.createTypeLiteralNode(
+              textOverridePropNames.map(name =>
+                factory.createPropertySignature(
+                  undefined,
+                  factory.createIdentifier(name),
+                  factory.createToken(ts.SyntaxKind.QuestionToken),
+                  factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
                 ),
               ),
             ),
-          ]),
+          ),
+        ]),
+      ...(Array.from(onClickOverrideProps).length > 0 ? [
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier('clicks'),
+          factory.createToken(ts.SyntaxKind.QuestionToken),
+          factory.createTypeLiteralNode(
+            Array.from(onClickOverrideProps).map(name =>
+              factory.createPropertySignature(
+                undefined,
+                factory.createIdentifier(name),
+                factory.createToken(ts.SyntaxKind.QuestionToken),
+                factory.createFunctionTypeNode(
+                  undefined, // No type parameters
+                  [], // Empty parameters (indicates `()`)
+                  ts.factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword) // Return type `void`
+                )
+              ),
+            ),
+          ),
+        ),
+      ] : []),
     ],
   );
 }
@@ -355,9 +380,15 @@ export function mkCompFunction(
   prefixStatements: Statement[] = [],
   skipAnnotation?: boolean,
 ) {
-  const { classOverrides } = moduleContext;
+  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick } = moduleContext;
+  const textOverridePropNames = Array.from(textOverrideProps);
   const classes = Array.from(classOverrides);
   let returnedExpression = jsxOneOrMoreToJsxExpression(tsx);
+  const isScreen = compName.includes('Screen')
+
+  const hasOnClickChild = Array.from(onClickOverrideProps).length > 0
+  const hasUseOnClick = hasOnClick || hasOnClickChild || isScreen
+  const hasUseText = textOverridePropNames?.length || isScreen
 
   // Create the component function as AST node
   const componentVariableStatement = factory.createVariableStatement(
@@ -368,7 +399,7 @@ export function mkCompFunction(
           factory.createIdentifier(fnName),
           undefined,
           factory.createTypeReferenceNode(factory.createIdentifier('FC'), [
-            factory.createTypeReferenceNode(factory.createIdentifier('Props'), undefined),
+            factory.createTypeReferenceNode(factory.createIdentifier(`${compName}Props`), undefined),
           ]),
           factory.createCallExpression(factory.createIdentifier('memo'), undefined, [
             factory.createFunctionExpression(
@@ -393,48 +424,82 @@ export function mkCompFunction(
                   ...prefixStatements,
                   ...(flags.destructureClassNames
                     ? [
-                        factory.createVariableStatement(
-                          undefined,
-                          factory.createVariableDeclarationList(
-                            [
-                              factory.createVariableDeclaration(
-                                factory.createObjectBindingPattern([
-                                  factory.createBindingElement(
-                                    undefined,
-                                    undefined,
-                                    factory.createIdentifier('className'),
-                                    undefined,
-                                  ),
-                                  ...(!classes?.length
-                                    ? []
-                                    : [
-                                        factory.createBindingElement(
-                                          undefined,
-                                          factory.createIdentifier('classes'),
-                                          factory.createObjectBindingPattern(
-                                            classes.map(cl =>
-                                              factory.createBindingElement(
-                                                undefined,
-                                                undefined,
-                                                factory.createIdentifier(cl),
-                                                undefined,
-                                              ),
-                                            ),
+                      factory.createVariableStatement(
+                        undefined,
+                        factory.createVariableDeclarationList(
+                          [
+                            factory.createVariableDeclaration(
+                              factory.createObjectBindingPattern([
+                                factory.createBindingElement(
+                                  undefined,
+                                  undefined,
+                                  factory.createIdentifier('className'),
+                                  undefined,
+                                ),
+                                ...(!classes?.length
+                                  ? []
+                                  : [
+                                    factory.createBindingElement(
+                                      undefined,
+                                      factory.createIdentifier('classes'),
+                                      factory.createObjectBindingPattern(
+                                        classes.map(cl =>
+                                          factory.createBindingElement(
+                                            undefined,
+                                            undefined,
+                                            factory.createIdentifier(cl),
+                                            undefined,
                                           ),
-                                          factory.createObjectLiteralExpression([], false),
                                         ),
-                                      ]),
-                                ]),
-                                undefined,
-                                undefined,
-                                factory.createIdentifier('props'),
-                              ),
-                            ],
-                            ts.NodeFlags.Const,
-                          ),
+                                      ),
+                                      factory.createObjectLiteralExpression([], false),
+                                    ),
+                                  ]),
+                              ]),
+                              undefined,
+                              undefined,
+                              factory.createIdentifier('props'),
+                            ),
+                          ],
+                          ts.NodeFlags.Const,
                         ),
-                      ]
+                      ),
+                    ]
                     : []),
+                  // Add use/<Component/>()
+                  factory.createVariableStatement(
+                    undefined,
+                    factory.createVariableDeclarationList(
+                      [
+                        factory.createVariableDeclaration(
+                          factory.createObjectBindingPattern([
+                            // Texts
+                            !!hasUseText && factory.createBindingElement(undefined, undefined, factory.createIdentifier('text')),
+                            // !!textOverridePropNames?.length && factory.createBindingElement(
+                            //   undefined,
+                            //   factory.createIdentifier('text'),
+                            //   factory.createObjectBindingPattern(
+                            //     textOverridePropNames.map(cl =>
+                            //       factory.createBindingElement(undefined, undefined, factory.createIdentifier(cl), undefined,),
+                            //     ),
+                            //   ),
+                            // ),
+                            // OnClick
+                            !!hasUseOnClick && factory.createBindingElement(undefined, undefined, factory.createIdentifier('clicks'))
+                          ].filter(o => !!o)),
+                          undefined,
+                          undefined,
+                          ts.factory.createCallExpression(
+                            ts.factory.createIdentifier(`use${compName}`), // Function name (useComp)
+                            undefined, // No type arguments
+                            [ts.factory.createIdentifier("props")] // Arguments (props)
+                          ),
+                        )
+                      ],
+                      ts.NodeFlags.Const,
+                    ),
+                  ),
+                  // Add return Element
                   factory.createReturnStatement(returnedExpression),
                 ],
                 true,
@@ -494,12 +559,31 @@ export function mkFragment(children: ts.JsxChild | ts.JsxChild[]) {
   return factory.createJsxFragment(factory.createJsxOpeningFragment(), children, factory.createJsxJsxClosingFragment());
 }
 
-export function mkTag(tagName: string, classAttr: ts.JsxAttribute[] | null, children: ts.JsxChild[] | null) {
+export function mkTag(tagName: string, classAttr: ts.JsxAttribute[] | null, children: ts.JsxChild[] | null, hasOnClick?: boolean) {
   return factory.createJsxElement(
     factory.createJsxOpeningElement(
       factory.createIdentifier(tagName),
       undefined,
-      factory.createJsxAttributes(classAttr ?? []),
+      // factory.createJsxAttributes(classAttr ?? [])
+      factory.createJsxAttributes([
+        // Classes
+        ...(classAttr ?? []),
+        // OnClicks
+        ...(hasOnClick ? [
+          factory.createJsxAttribute(
+            ts.factory.createIdentifier('onClick'), // Name of the attribute
+            ts.factory.createJsxExpression(
+              undefined, // No dot operator for optional chaining
+              factory.createPropertyAccessChain(
+                factory.createIdentifier('clicks'),
+                factory.createToken(ts.SyntaxKind.QuestionDotToken),
+                factory.createIdentifier('onClick'),
+              )
+            )
+          )
+        ] : []),
+        // more...
+      ]),
     ),
     children ?? [],
     factory.createJsxClosingElement(factory.createIdentifier(tagName)),
@@ -599,24 +683,25 @@ function mkWrapTextOverrideExprFragment(ast: JsxOneOrMore | undefined, node: Sce
   if (!ast || !node.textOverrideProp) {
     return ast;
   }
-  return factory.createConditionalExpression(
-    factory.createBinaryExpression(
-      factory.createPropertyAccessChain(
-        factory.createPropertyAccessExpression(factory.createIdentifier('props'), factory.createIdentifier('text')),
-        factory.createToken(ts.SyntaxKind.QuestionDotToken),
-        factory.createIdentifier(node.textOverrideProp),
+
+  return ts.factory.createConditionalExpression(
+    ts.factory.createBinaryExpression(
+      ts.factory.createPropertyAccessChain(
+        ts.factory.createIdentifier("text"),
+        ts.factory.createToken(ts.SyntaxKind.QuestionDotToken),
+        ts.factory.createIdentifier(node.textOverrideProp)
       ),
-      factory.createToken(ts.SyntaxKind.ExclamationEqualsToken),
-      factory.createNull(),
+      ts.SyntaxKind.ExclamationEqualsEqualsToken,
+      ts.factory.createNull()
     ),
-    factory.createToken(ts.SyntaxKind.QuestionToken),
-    factory.createPropertyAccessChain(
-      factory.createPropertyAccessExpression(factory.createIdentifier('props'), factory.createIdentifier('text')),
-      factory.createToken(ts.SyntaxKind.QuestionDotToken),
-      factory.createIdentifier(node.textOverrideProp),
+    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+    ts.factory.createPropertyAccessChain(
+      ts.factory.createIdentifier("text"),
+      ts.factory.createToken(ts.SyntaxKind.QuestionDotToken),
+      ts.factory.createIdentifier(node.textOverrideProp)
     ),
-    factory.createToken(ts.SyntaxKind.ColonToken),
-    jsxOneOrMoreToJsxExpression(ast),
+    ts.factory.createToken(ts.SyntaxKind.ColonToken),
+    jsxOneOrMoreToJsxExpression(ast)
   );
 }
 
@@ -637,10 +722,10 @@ function mkWrapHideExprFragment<T extends JsxOneOrMore | ts.Expression | undefin
   const checkHideExpr =
     hideDefaultValue === true
       ? factory.createBinaryExpression(
-          hidePropVar,
-          factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-          factory.createFalse(),
-        )
+        hidePropVar,
+        factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+        factory.createFalse(),
+      )
       : factory.createPrefixUnaryExpression(ts.SyntaxKind.ExclamationToken, hidePropVar);
   const ast2 = factory.createBinaryExpression(
     checkHideExpr,
@@ -696,8 +781,7 @@ function mkClassExpression(overrideEntry: BaseStyleOverride, extraConfig: ExtraC
   const { overrideValue, propValue } = overrideEntry;
   if (!overrideValue && !propValue) {
     throw new Error(
-      `[mkClassExpression] BUG Missing both overrideValue and propValue when writing overrides for node ${
-        (overrideEntry as FigmaOverride<any>).intermediateNode?.name
+      `[mkClassExpression] BUG Missing both overrideValue and propValue when writing overrides for node ${(overrideEntry as FigmaOverride<any>).intermediateNode?.name
       }, prop ${(overrideEntry as FigmaOverride<any>).propName}.`,
     );
   }
@@ -804,8 +888,7 @@ export function mkSwapsAttribute(swaps: CompContext['instanceSwaps']) {
           const { propName, overrideValue, propValue } = overrideEntry;
           if (!overrideValue && !propValue) {
             throw new Error(
-              `[mkSwapsAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${
-                (overrideEntry as FigmaOverride<any>).intermediateNode?.name
+              `[mkSwapsAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${(overrideEntry as FigmaOverride<any>).intermediateNode?.name
               }, prop ${(overrideEntry as FigmaOverride<any>).propName}.`,
             );
             // overrideEntry may not be a FigmaOverride, but the base version only, so propName and intermediateNode are not guaranteed to exist. But if they do, they bring useful information for the error message.
@@ -813,13 +896,13 @@ export function mkSwapsAttribute(swaps: CompContext['instanceSwaps']) {
 
           const propExpr = propValue
             ? factory.createPropertyAccessChain(
-                factory.createPropertyAccessExpression(
-                  factory.createIdentifier('props'),
-                  factory.createIdentifier('swap'),
-                ),
-                factory.createToken(ts.SyntaxKind.QuestionDotToken),
-                factory.createIdentifier(propValue),
-              )
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier('props'),
+                factory.createIdentifier('swap'),
+              ),
+              factory.createToken(ts.SyntaxKind.QuestionDotToken),
+              factory.createIdentifier(propValue),
+            )
             : undefined;
 
           const overrideValueAst = jsxOneOrMoreToExpression(overrideValue);
@@ -827,8 +910,8 @@ export function mkSwapsAttribute(swaps: CompContext['instanceSwaps']) {
           const ast = !propValue
             ? overrideValueAst!
             : !overrideValue
-            ? propExpr!
-            : factory.createBinaryExpression(
+              ? propExpr!
+              : factory.createBinaryExpression(
                 propExpr!,
                 factory.createToken(ts.SyntaxKind.BarBarToken),
                 overrideValueAst!,
@@ -860,8 +943,7 @@ export function mkHidingsAttribute(hidings: CompContext['instanceHidings']) {
           const { propName, overrideValue, propValue } = overrideEntry;
           if (overrideValue == null && propValue == null) {
             throw new Error(
-              `[mkHidingsAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${
-                (overrideEntry as FigmaOverride<any>).intermediateNode?.name
+              `[mkHidingsAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${(overrideEntry as FigmaOverride<any>).intermediateNode?.name
               }, prop ${(overrideEntry as FigmaOverride<any>).propName}.`,
             );
             // overrideEntry may not be a FigmaOverride, but the base version only, so propName and intermediateNode are not guaranteed to exist. But if they do, they bring useful information for the error message.
@@ -869,13 +951,13 @@ export function mkHidingsAttribute(hidings: CompContext['instanceHidings']) {
 
           const propExpr = propValue
             ? factory.createPropertyAccessChain(
-                factory.createPropertyAccessExpression(
-                  factory.createIdentifier('props'),
-                  factory.createIdentifier('hide'),
-                ),
-                factory.createToken(ts.SyntaxKind.QuestionDotToken),
-                factory.createIdentifier(propValue),
-              )
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier('props'),
+                factory.createIdentifier('hide'),
+              ),
+              factory.createToken(ts.SyntaxKind.QuestionDotToken),
+              factory.createIdentifier(propValue),
+            )
             : undefined;
 
           const overrideValueAst =
@@ -884,8 +966,8 @@ export function mkHidingsAttribute(hidings: CompContext['instanceHidings']) {
           const ast = !propValue
             ? overrideValueAst!
             : overrideValue == null
-            ? propExpr!
-            : factory.createBinaryExpression(
+              ? propExpr!
+              : factory.createBinaryExpression(
                 propExpr!,
                 factory.createToken(ts.SyntaxKind.BarBarToken),
                 overrideValueAst!,
@@ -893,6 +975,88 @@ export function mkHidingsAttribute(hidings: CompContext['instanceHidings']) {
 
           return factory.createPropertyAssignment(factory.createIdentifier(propName), ast);
         }),
+        true,
+      ),
+    ),
+  );
+}
+
+// export function mkOnClickOverridesAttribute(onClickOverrides: CompContext['instanceOnClickOverrides']) {
+// let onClickCount = 0
+// const findOnClickOverride = (returnedExpression: any) => {
+//   returnedExpression?.children?.forEach(
+//     (c: any) => c.attributes?.properties?.forEach(
+//       (p: any) => { if (p.name.escapedText === 'onClick') onClickCount++ }))
+// }
+// // findOnClickOverride(returnedExpression)
+// return ts.factory.createJsxAttribute(
+//   ts.factory.createIdentifier('onClick'), // The attribute name "onClick"
+//   ts.factory.createJsxExpression(
+//     undefined, // No optional chaining
+//     ts.factory.createIdentifier(`onClick${onClickCount}`) // The expression value, "onClick"
+//   )
+// );
+// }
+
+export function mkOnClickOverridesAttribute(instanceOnClickOverrides: CompContext['instanceOnClickOverrides'], id: string) {
+  const entries = Object.values(instanceOnClickOverrides);
+  if (!entries.length) return undefined;
+  return factory.createJsxAttribute(
+    factory.createIdentifier('clicks'),
+    factory.createJsxExpression(
+      undefined,
+      factory.createObjectLiteralExpression(
+        entries
+          .filter(e => !!e.propValue || !entries.find(e => !!e.propValue))
+          .map(overrideEntry => {
+            const { propName, overrideValue, propValue } = overrideEntry;
+            if (overrideValue == null && propValue == null) {
+              throw new Error(
+                `[mkTextOverridesAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${(overrideEntry as FigmaOverride<any>).intermediateNode?.name
+                }, prop ${(overrideEntry as FigmaOverride<any>).propName}.`,
+              );
+              // overrideEntry may not be a FigmaOverride, but the base version only, so propName and intermediateNode are not guaranteed to exist. But if they do, they bring useful information for the error message.
+            }
+
+            const propertyAccess = factory.createPropertyAccessChain(
+              ts.factory.createIdentifier("clicks"), // Object `clicks`
+              ts.factory.createToken(ts.SyntaxKind.QuestionDotToken), // Optional chaining `?.`
+              ts.factory.createIdentifier("onClick") // Property `onClick`
+            );
+
+            // Step 3: Create the function call `clicks?.onClick('8:563:')`
+            const functionCall = factory.createCallExpression(
+              propertyAccess,
+              undefined, // No type arguments
+              [factory.createStringLiteral(`${id}:${propName.split('onClick').join('')}`)] // Argument `'8:563:'`
+            );
+
+            // Step 4: Create the logical AND expression `clicks?.onClick && clicks?.onClick('8:563:')`
+            const logicalAnd = factory.createBinaryExpression(
+              propertyAccess, // Left-hand side `clicks?.onClick`
+              ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken), // Logical AND `&&`
+              functionCall // Right-hand side `clicks?.onClick('8:563:')`
+            );
+
+            const arrowFunction = factory.createArrowFunction(
+              undefined, // No modifiers
+              undefined, // No type parameters
+              [], // No parameters
+              undefined, // No return type (inferred as `void`)
+              ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken), // The `=>` token
+              logicalAnd // The body of the arrow function (logical AND expression)
+            );
+
+            const propExpr = propValue
+              ? factory.createPropertyAccessChain(
+                factory.createIdentifier('clicks'),
+                factory.createToken(ts.SyntaxKind.QuestionDotToken),
+                factory.createIdentifier(propValue),
+              )
+              : arrowFunction;
+
+            return factory.createPropertyAssignment(factory.createIdentifier(entries.filter(e => !!e.propValue).length === 1 ? 'onClick' : propName), propExpr);
+          }),
         true,
       ),
     ),
@@ -912,8 +1076,7 @@ export function mkTextOverridesAttribute(textOverrides: CompContext['instanceTex
           const { propName, overrideValue, propValue } = overrideEntry;
           if (overrideValue == null && propValue == null) {
             throw new Error(
-              `[mkTextOverridesAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${
-                (overrideEntry as FigmaOverride<any>).intermediateNode?.name
+              `[mkTextOverridesAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${(overrideEntry as FigmaOverride<any>).intermediateNode?.name
               }, prop ${(overrideEntry as FigmaOverride<any>).propName}.`,
             );
             // overrideEntry may not be a FigmaOverride, but the base version only, so propName and intermediateNode are not guaranteed to exist. But if they do, they bring useful information for the error message.
@@ -921,23 +1084,33 @@ export function mkTextOverridesAttribute(textOverrides: CompContext['instanceTex
 
           const propExpr = propValue
             ? factory.createPropertyAccessChain(
-                factory.createPropertyAccessExpression(
-                  factory.createIdentifier('props'),
-                  factory.createIdentifier('text'),
-                ),
-                factory.createToken(ts.SyntaxKind.QuestionDotToken),
-                factory.createIdentifier(propValue),
-              )
+              // factory.createPropertyAccessExpression(
+              //   factory.createIdentifier('props'),
+              //   factory.createIdentifier('text'),
+              // ),
+              factory.createIdentifier('text'),
+              factory.createToken(ts.SyntaxKind.QuestionDotToken),
+              factory.createIdentifier(propValue),
+            )
             : undefined;
 
           const overrideValueAst = jsxOneOrMoreToJsxExpression(overrideValue);
+          const auxPropName = overrideValueAst?.openingElement?.attributes?.properties[0]?.initializer?.expression?.name?.escapedText
 
           const ast = !propValue
-            ? overrideValueAst!
+            ? (auxPropName ? factory.createBinaryExpression(
+              factory.createPropertyAccessChain(
+                factory.createIdentifier('text'),
+                factory.createToken(ts.SyntaxKind.QuestionDotToken),
+                factory.createIdentifier(auxPropName),
+              ),
+              factory.createToken(ts.SyntaxKind.BarBarToken),
+              overrideValueAst!,
+            ) : overrideValueAst)
             : overrideValue == null
-            ? propExpr!
-            : factory.createBinaryExpression(
-                propExpr!,
+              ? propExpr!
+              : factory.createBinaryExpression(
+                propExpr,
                 factory.createToken(ts.SyntaxKind.BarBarToken),
                 overrideValueAst!,
               );

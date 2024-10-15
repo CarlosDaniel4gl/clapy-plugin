@@ -43,6 +43,7 @@ import { addHiddenNodeToInstance } from './gen-node-utils/default-node.js';
 import {
   getOrGenClassName,
   getOrGenHideProp,
+  getOrGenOnClickOverrideProp,
   getOrGenSwapName,
   getOrGenTextOverrideProp,
 } from './gen-node-utils/gen-unique-name-utils.js';
@@ -66,7 +67,7 @@ import { guessTagNameAndUpdateNode } from './smart-guesses/guessTagName.js';
 
 export function genInstanceOverrides(context: InstanceContext, node: SceneNode2) {
   try {
-    const { parentNode, moduleContext, componentContext, nodeOfComp, isRootInComponent } = context;
+    const { parentNode, moduleContext, componentContext, componentContext: { baseCompName }, nodeOfComp, isRootInComponent, tagName } = context;
     if (!isRootInComponent) {
       // The root node is an instance node, also used where the instance is used, and a context is already attached there.
       // It shouldn't be overridden, otherwise we get a wrong node.isRootInComponent in the instance usage.
@@ -110,8 +111,8 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
         const nodeOfComp2 = !isOriginalInstance
           ? node
           : node.foundIntermediateSwap
-          ? (context.intermediateNodes[context.intermediateNodes.length - 1] as InstanceNode2)
-          : nodeOfComp;
+            ? (context.intermediateNodes[context.intermediateNodes.length - 1] as InstanceNode2)
+            : nodeOfComp;
         assertInstance(nodeOfComp2);
 
         const instanceNode = node as InstanceNode2;
@@ -165,10 +166,15 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
     // Add common styles (text and tags)
     mapCommonStyles(context, node, styles);
 
+    if (isRootInComponent && tagName === 'div' && baseCompName.includes('Button')) {
+      addOnClickOverride(context, node, styles);
+    }
+
     if (isText(node)) {
       context.notOverridingAnotherClass = true;
       addTextOverride(context, node, styles);
-    } else if (isVector(node)) {
+    }
+    else if (isVector(node)) {
       const { intermediateNodes } = context;
       const nextIntermediateNode = intermediateNodes[1];
 
@@ -196,7 +202,8 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
           }
         }
       }
-    } else if (isBlockNode(node)) {
+    }
+    else if (isBlockNode(node)) {
       patchInstanceAsSVG(context, node);
 
       // Add tag styles
@@ -540,9 +547,9 @@ function addTextOverride(context: InstanceContext, node: TextNode2, styles: Dict
   if (!isText(nextIntermediateNode)) {
     throw new Error(`BUG? Instance node ${node.name} is text but component node ${nextIntermediateNode?.name} is not.`);
   }
-  if (equal(node._textSegments, nextIntermediateNode._textSegments)) {
-    return;
-  }
+  // if (equal(node._textSegments, nextIntermediateNode._textSegments)) {
+  //   return;
+  // }
   prepareStylesOnTextSegments(context, node, styles);
   const textAst = genTextAst(node, true);
   if (!textAst) {
@@ -562,14 +569,31 @@ function addTextOverride(context: InstanceContext, node: TextNode2, styles: Dict
   );
 }
 
+function addOnClickOverride(context: InstanceContext, node: SceneNode2, styles: Dict<DeclarationPlain>) {
+  let { intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps } = context;
+
+  // Check that the text of current node changed vs the next intermediate component
+  const nextIntermediateNode = intermediateNodes[1];
+
+  addOverrides(
+    intermediateNodes,
+    intermediateComponentContexts,
+    intermediateInstanceNodeOfComps,
+    '',
+    (componentContext, intermediateNode) => getOrGenOnClickOverrideProp(componentContext, intermediateNode),
+    'instanceOnClickOverrides',
+    'onClickOverrideProp',
+  );
+}
+
 function addOverrides(
   intermediateNodes: InstanceContext['intermediateNodes'],
   intermediateComponentContexts: InstanceContext['intermediateComponentContexts'],
   intermediateInstanceNodeOfComps: InstanceContext['intermediateInstanceNodeOfComps'],
   overrideValue: SwapAst | string | boolean | FwNodeOneOrMore | ts.BinaryExpression | ts.ConditionalExpression,
   genAndRegisterPropName: (componentContext: ModuleContext, intermediateNode: SceneNode2) => string,
-  compContextField: 'instanceStyleOverrides' | 'instanceSwaps' | 'instanceHidings' | 'instanceTextOverrides',
-  nodeFieldForOverrideValue: 'className' | 'swapName' | 'hideProp' | 'textOverrideProp',
+  compContextField: 'instanceStyleOverrides' | 'instanceSwaps' | 'instanceHidings' | 'instanceTextOverrides' | 'instanceOnClickOverrides',
+  nodeFieldForOverrideValue: 'className' | 'swapName' | 'hideProp' | 'textOverrideProp' | 'onClickOverrideProp',
 ) {
   for (let i = 1; i < intermediateNodes.length; i++) {
     const intermediateNode = intermediateNodes[i];
@@ -605,14 +629,11 @@ function addOverrides(
     if (i === 1) {
       if (overrideEntry.overrideValue != null && overrideEntry.overrideValue !== overrideValue) {
         warnOrThrow(
-          `BUG [addOverrides3] The instance ${
-            parentInstanceNode.name
-          } already has an overrideValue set to override the node ${
-            indexByNode.name
-          }, but the value is different. Existing value: ${overrideEntry.overrideValue}, new value: ${
-            typeof overrideValue === 'string' || typeof overrideValue === 'boolean'
-              ? overrideValue
-              : printStandalone(overrideValue)
+          `BUG [addOverrides3] The instance ${parentInstanceNode.name
+          } already has an overrideValue set to override the node ${indexByNode.name
+          }, but the value is different. Existing value: ${overrideEntry.overrideValue}, new value: ${typeof overrideValue === 'string' || typeof overrideValue === 'boolean'
+            ? overrideValue
+            : printStandalone(overrideValue)
           }`,
         );
       }

@@ -25,13 +25,9 @@ export function getOrGenComponent(
   skipAddImport = false,
   isScreen = false
 ) {
-  const {
-    projectContext: { compNodes, components },
-  } = parentModuleContext;
+  const { projectContext: { compNodes, components }, } = parentModuleContext;
   let comp = getComponentOrNil(compNodes, node);
-  if (!isRootComponent && !comp) {
-    warnOrThrow(`Node ${node.name} is not the root node, but it isn't a component or an instance.`);
-  }
+  if (!isRootComponent && !comp) warnOrThrow(`Node ${node.name} is not the root node, but it isn't a component or an instance.`);
   const isEmbeddedComponent = isComponent(node);
   if (!flags.enableInstanceOverrides || !comp) {
     const moduleContext = createModuleContextForNode(
@@ -119,6 +115,7 @@ export function mkModuleContext(
   isComp: boolean,
   skipNodeRendering: boolean,
   isEmbeddedComponent: boolean,
+  hasOnClick: boolean | undefined
 ) {
   const moduleContext: ModuleContext = {
     projectContext,
@@ -127,6 +124,7 @@ export function mkModuleContext(
     statements: [],
     pageDir: pageName,
     compDir,
+    hasOnClick,
     compName,
     baseCompName,
     classNamesAlreadyUsed: new Set(['root']),
@@ -141,6 +139,7 @@ export function mkModuleContext(
     isEmbeddedComponent,
     hideProps: new Set(),
     textOverrideProps: new Set(),
+    onClickOverrideProps: new Set(),
   };
   return moduleContext;
 }
@@ -167,6 +166,7 @@ function createModuleContextForNode(
   const screenDirPath = 'src/figma/screens';
   // const compDir = pageDir ? `${compDirPath}${pageDir}/${compDirName}` : `${compDirPath}${compDirName}`;
   const compDir = isScreen ? `${screenDirPath}/${compDirName}` : `${compDirPath}${compDirName}`;
+  const hasOnClick = compName.includes('Button')
 
   const moduleContext = mkModuleContext(
     projectContext,
@@ -180,6 +180,7 @@ function createModuleContextForNode(
     isComp,
     false,
     isEmbeddedComponent,
+    hasOnClick
   );
   node.isRootInComponent = true;
   prepareRootNode(moduleContext, node, parent);
@@ -204,7 +205,7 @@ function prepareRootNode(moduleContext: ModuleContext, root: SceneNode2, parent:
 }
 
 export function genAstFromRootNode(moduleContext: ModuleContext) {
-  const { node } = moduleContext;
+  const { node, hasOnClick } = moduleContext;
   const { nodeContext: context } = node;
   if (!context) throw new Error(`[genNodeAst] node ${node.name} has no nodeContext`);
   context.isRootInComponent = true;

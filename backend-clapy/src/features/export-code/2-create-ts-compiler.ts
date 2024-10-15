@@ -44,17 +44,14 @@ function getCSSVariablesFileName(cssExt: string) {
 const enableMUIInDev = false;
 
 export async function exportCode({ root, components, svgs, images, styles, extraConfig, tokens, page, githubAccessToken }: ExportCodePayload) {
-
-  // Legacy zip setting
-  if (!extraConfig.target) extraConfig.target = extraConfig.zip ? UserSettingsTarget.zip : UserSettingsTarget.csb;
-  // /Legacy
-  extraConfig.useZipProjectTemplate = env.localPreviewInsteadOfCsb || extraConfig.target !== UserSettingsTarget.csb;
+  // project config
+  extraConfig.target = UserSettingsTarget.zip//if (!extraConfig.target) extraConfig.target = extraConfig.zip ? UserSettingsTarget.zip : UserSettingsTarget.csb;
+  extraConfig.useZipProjectTemplate = true // env.localPreviewInsteadOfCsb || extraConfig.target !== UserSettingsTarget.csb;
   const fwConnector = frameworkConnectors['react'];
   extraConfig.componentsDir = 'src/figma/components' //extraConfig.componentsDir
 
   // Figma
   const parent = (root as any)?.parent as ParentNode | Nil;
-
   const instancesInComp: InstanceNode2[] = [];
   for (const comp of components) {
     fillWithDefaults((comp as any)?.parent, instancesInComp, true);
@@ -69,18 +66,14 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     fillWithComponent(instance, compNodes);
   }
   fillWithComponent(root, compNodes);
-  if (!root) {
-    throw new HttpException(
-      'Clapy failed to read your selection and is unable to generate code. Please let us know so that we can fix it.',
-      400,
-    );
-  }
+  if (!root) throw new HttpException('Clapy is unable to generate code with your selection.', 400);
   perfMeasure('a');
 
+  // Figma Tokens (apparently never any tokens)
   const { varNamesMap, cssVarsDeclaration, tokensRawMap } = genStyles(tokens as TokenStore | undefined);
   perfMeasure('b1');
 
-  // Initialize the project template with base files
+  // Initialize the project template with base files (copy template folder)
   let filesCsb = await readTemplateFiles(fwConnector.templateBaseDirectory(extraConfig));
   let [tsFiles, cssFiles, resources] = separateTsCssAndResources(filesCsb);
 
@@ -100,8 +93,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     svgsRead: new Map(),
     images,
     styles,
-    enableMUIFramework:
-      extraConfig.framework === 'react' && (env.isDev ? enableMUIInDev : !!extraConfig.enableMUIFramework),
+    enableMUIFramework: false, // extraConfig.framework === 'react' && (env.isDev ? enableMUIInDev : !!extraConfig.enableMUIFramework),
     varNamesMap,
     tokensRawMap,
     extraConfig,
@@ -111,36 +103,39 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     page,
   };
 
-  cssFiles[getResetsCssModulePath(projectContext)] = await readTemplateFile(getResetsCssModuleSrcPath(projectContext));
-
-  // /!\ filesCsb doesn't share any ref with tsFiles, cssFiles and resources. It should not be used anymore.
-
+  // Add figma/compoents main style file
+  cssFiles[getResetsCssModulePath(projectContext)] = await readTemplateFile(getResetsCssModuleSrcPath(projectContext)); // /!\ filesCsb doesn't share any ref with tsFiles, cssFiles and resources. It should not be used anymore.
+  // Modify current css files
   updateFilesAndContentForScss(projectContext);
   fwConnector.patchProjectConfigFiles(projectContext, extraConfig);
   perfMeasure('b2');
 
-  const { appCompDir, appBaseCompName } = fwConnector;
-
+  // Prepare root component
   const lightAppModuleContext = mkModuleContext(
     projectContext,
     {} as unknown as SceneNode2,
     undefined,
-    appCompDir,
-    fwConnector.getCompName(projectContext, root, appBaseCompName),
-    appBaseCompName,
+    fwConnector.appCompDir,
+    fwConnector.getCompName(projectContext, root, fwConnector.appBaseCompName),
+    fwConnector.appBaseCompName,
     undefined,
     true,
     false,
     true,
     false,
+    false
   );
-  perfMeasure('c');
   const lightAppNodeContext = createNodeContext(lightAppModuleContext, root, parent);
   perfMeasure('c2');
+
+  // Prepare all components recursively
   const componentContext = prepareCompUsageWithOverrides(lightAppNodeContext, root, true);
   perfMeasure('c3');
+
+  // GET CODE
   generateAllComponents(projectContext);
   perfMeasure('d');
+
   if (!(root as SceneNode2).componentContext) {
     (root as SceneNode2).componentContext = componentContext;
   }
@@ -192,6 +187,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     // Nos quedamos con App.js templante
     csbFiles['src/App.tsx'] = csbFiles['src/AppTemplate.tsx']
     delete csbFiles['src/AppTemplate.tsx']
+
     // Actualizamos los imports y las rutas de las screens en mainrouter
     const screens = await listScreens() as string[]
     csbFiles['src/routes/screens.tsx'].content = `${screens
@@ -208,6 +204,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
       .filter(k => k.includes('src/figma/screens/') && k.includes('.tsx') && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || '')))
       .map(s => `{route: '${s.split('Screen')[0].split('/').pop()}', component: <${s.split('.tsx')[0].split('/').pop()}/>}`)
       .join(',\n')}\n]`
+
     // Para los figma comp with absolute pos and bottom 0 and fill with
     Object.keys(csbFiles).filter(k => k.includes('.module.css')).forEach(k => {
       let isClass = false
