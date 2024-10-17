@@ -297,7 +297,7 @@ export function genNodeAst(node: SceneNode2) {
       let attributes: FwAttr[] = [];
       if (flags.writeFigmaIdOnNode) attributes.push(mkIdAttribute(node.id));
 
-      if (hasStyles) {
+      if (hasStyles /*&& !node?.componentContext?.baseCompName.includes('Modal')*/) {
         updateCssRule(context, cssRule, className!, parentRule, styleDeclarations);
         attributes.push(fwConnector.createClassAttribute(node, extraConfig, node.htmlClass!));
         if (context.firstChildIsPlaceholder) {

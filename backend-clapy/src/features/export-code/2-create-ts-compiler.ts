@@ -34,6 +34,8 @@ import { addMUIPackages } from './tech-integration/mui/mui-add-packages.js';
 import { addScssPackage, getCSSExtension, updateFilesAndContentForScss } from './tech-integration/scss/scss-utils.js';
 import { genStyles } from './tech-integration/style-dictionary/gen-styles.js';
 import type { TokenStore } from './tech-integration/style-dictionary/types/types/tokens/TokensStore.js';
+import { csstree } from './create-ts-compiler/csstree.js';
+import { Value } from 'css-tree';
 
 const { factory } = ts;
 
@@ -205,28 +207,89 @@ export async function exportCode({ root, components, svgs, images, styles, extra
       .map(s => `{route: '${s.split('Screen')[0].split('/').pop()}', component: <${s.split('.tsx')[0].split('/').pop()}/>}`)
       .join(',\n')}\n]`
 
-    // Para los figma comp with absolute pos and bottom 0 and fill with
+    // Para los figma comp with absolute pos and bottom 0 and fill with (bottomTab o header)
     Object.keys(csbFiles).filter(k => k.includes('.module.css')).forEach(k => {
-      let isClass = false
-      let absolute: number | undefined = undefined
-      let bottom = false
-      let width: number | undefined = undefined
-      csbFiles[k].content?.split('\n').forEach((l, i) => {
-        if (l.includes('{')) isClass = true
-        else if (l.includes('position: absolute;')) absolute = i
-        else if (l.includes('bottom:')) bottom = true
-        else if (l.includes('width:')) width = i
-        else if (l.includes('}') && (!bottom || !width || !absolute)) {
-          isClass = false
-          absolute = undefined
-          bottom = false
-          width = undefined
+      const ast = csstree.parse(csbFiles[k].content);
+      // Traverse the AST to find the width and height properties
+      csstree.walk(ast, function (node, item, list) {
+
+        if (node.type === 'Rule' && node.prelude.type === 'SelectorList') {
+          // Check if the selector matches the class you want to remove
+          const selector = csstree.generate(node.prelude);
+          if (selector.split('.').length > 3) {
+            // Borrar override styles con mas de un intermediate
+            list.remove(item);
+          }
         }
-        else if (l.includes('}') && bottom && width && absolute) {
-          csbFiles[k].content = csbFiles[k].content.split('\n').map((l, i) => i === width ? l.replace(/width: \w+;/, '') : l).join('\n')
-          csbFiles[k].content = csbFiles[k].content.split('\n').map((l, i) => i === absolute ? l.replace('position: absolute;', 'position: fixed;') : l).join('\n')
+
+        // Find the specific class declarations
+        if (node.type === 'Rule' && node.prelude.type === 'SelectorList') {
+          const selector = csstree.generate(node.prelude);
+
+          // Log which class we're inspecting
+          console.log(`Inspecting class: ${selector}`);
+          let absolute = false
+          let bottom = false
+          let left = false
+          let right = false
+          let top = false
+          let width = false
+          let height = false
+          let bgInitial = false
+          // Traverse the declarations in the block
+          node.block.children.forEach(declaration => {
+            const isDeclaration = declaration.type === 'Declaration'
+            const value = isDeclaration && csstree.generate(declaration.value)
+            absolute = absolute || isDeclaration && declaration.property === 'position' && value === 'absolute'
+            bottom = bottom || isDeclaration && declaration.property === 'bottom'
+            left = left || isDeclaration && declaration.property === 'left'
+            right = right || isDeclaration && declaration.property === 'right'
+            top = top || isDeclaration && declaration.property === 'top'
+            width = width || isDeclaration && declaration.property === 'width'
+            height = height || isDeclaration && declaration.property === 'height'
+            bgInitial = height || isDeclaration && declaration.property === 'background-color' && value === 'initial'
+          });
+          // Si es un modal [absolte, 0, 0, 0, 0]
+
+          if (absolute && bottom && left && right && top && width && height) {
+            node.block.children.forEach(declaration => {
+              const isDeclaration = declaration.type === 'Declaration'
+              if (isDeclaration && declaration.property === 'width') {
+                declaration.value = csstree.parse('100%', { context: 'value' }) as Value;
+                declaration.important = true
+              }
+              if (isDeclaration && declaration.property === 'height') {
+                declaration.value = csstree.parse('100%', { context: 'value' }) as Value;
+                declaration.important = true
+              }
+            })
+          }
+          // Si es un bottom tab [absolte, 0, 0, 0]
+          else if (absolute && bottom && left && right && width) {
+            node.block.children.forEach(declaration => {
+              const isDeclaration = declaration.type === 'Declaration'
+              if (isDeclaration && declaration.property === 'width') {
+                declaration.value = csstree.parse('100%', { context: 'value' }) as Value;
+                declaration.important = true
+              }
+              if (isDeclaration && declaration.property === 'position') {
+                declaration.value = csstree.parse('fixed', { context: 'value' }) as Value;
+              }
+            })
+          }
+          // Si viene de n componente con hide prop tiene bgInitial
+          node.block.children.forEach((declaration, item) => {
+            const isDeclaration = declaration.type === 'Declaration'
+            const value = isDeclaration && csstree.generate(declaration.value)
+            if (isDeclaration && declaration.property === 'background-color' && value === 'initial') {
+              node.block.children.remove(item);
+            }
+          })
         }
-      })
+      });
+      // Generate the modified CSS back into a string
+      const modifiedCss = csstree.generate(ast);
+      csbFiles[k].content = modifiedCss
     })
 
     perfMeasure('k');

@@ -86,7 +86,7 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
       // return;
       console.log('')
     }
-    addHideOverride(context, node); 
+    addHideOverride(context, node);
     if (!node.visible) {
       //return;
       console.log('')
@@ -174,12 +174,10 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
     }
 
     if (baseCompName.includes('Modal'))
-        console.log('') 
+      console.log('')
 
     if (isText(node)) {
       context.notOverridingAnotherClass = true;
-      if (baseCompName.includes('Modal'))
-        console.log('') 
       addTextOverride(context, node, styles);
     }
     else if (isVector(node)) {
@@ -227,7 +225,7 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
 
       styles = postMapStyles(context, node, styles);
       const styleDeclarations = stylesToList(styles);
-      if (styleDeclarations.length) {
+      if (styleDeclarations.length /*&& !baseCompName.includes('Modal')*/) {
         const className = getOrGenClassName(moduleContext, node);
         getOrGenClassName(componentContext, nodeOfComp);
         // TODO add parentRule and the rules loop for instances
@@ -548,7 +546,7 @@ function addHideOverride2(
 }
 
 function addTextOverride(context: InstanceContext, node: TextNode2, styles: Dict<DeclarationPlain>) {
-  let { intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps, componentContext: {baseCompName} } = context;
+  let { intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps, componentContext: { baseCompName } } = context;
 
   // Check that the text of current node changed vs the next intermediate component
   const nextIntermediateNode = intermediateNodes[1];
