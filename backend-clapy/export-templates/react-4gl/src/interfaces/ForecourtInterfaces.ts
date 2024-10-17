@@ -98,6 +98,18 @@ export interface FuellingPointElement extends Layout {
   GradeOptions: GradeOption[];
 }
 
+export interface SettingsPar {
+  Key: string
+  Value: string
+}
+
+export interface Settings {
+  CardPayment: boolean
+  BlankPumpScreenWithoutItems: boolean
+  CreditCustomerModule: boolean
+  StationName?: string
+}
+
 export interface FinishTransactionRequest {
   FuellingTransactions: FuellingTransaction[];
   IdPersonal: number;

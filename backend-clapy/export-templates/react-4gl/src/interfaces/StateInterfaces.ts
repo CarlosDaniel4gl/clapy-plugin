@@ -1,4 +1,5 @@
 import { Customer } from "./TicketInterfaces";
+import { SettingsPar } from './ForecourtInterfaces';
 import {
   FuellingPointElement,
   InformationMessageInfo,
@@ -22,4 +23,5 @@ export interface ForecourtState {
   infoMessage: InformationMessageInfo | undefined;
   prices: { [key: number]: number };
   customerList: Customer[];
+  settings: SettingsPar[]
 }

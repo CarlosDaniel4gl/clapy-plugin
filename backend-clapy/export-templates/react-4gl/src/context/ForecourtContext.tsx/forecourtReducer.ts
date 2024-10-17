@@ -1,4 +1,4 @@
-import { FuellingPointElement, InformationMessageInfo, LoginInfo, Transaction } from "../../interfaces/ForecourtInterfaces";
+import { FuellingPointElement, InformationMessageInfo, LoginInfo, SettingsPar, Transaction } from "../../interfaces/ForecourtInterfaces";
 import { appStateValues, ForecourtState } from "../../interfaces/StateInterfaces";
 import { Customer } from "../../interfaces/TicketInterfaces";
 import { isPrepay } from "../../utils/TransactionUtil";
@@ -12,6 +12,10 @@ type ForecourtAction =
   | {
     type: "setLoginInfo";
     payload: LoginInfo[];
+  }
+  | {
+    type: "setSettings";
+    payload: SettingsPar[];
   }
   | {
     type: "setCustomerList";

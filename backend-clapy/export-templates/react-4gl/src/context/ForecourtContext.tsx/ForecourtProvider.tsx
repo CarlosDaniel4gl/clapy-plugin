@@ -3,7 +3,7 @@ import { useEffect, useReducer } from "react";
 import { ForecourtContext } from "./ForecourtContext";
 import { forecourtReducer } from "./forecourtReducer";
 import { useWebsocketTpvConnection } from "../../hooks/useWebsocketTpvConnection";
-import { CustomerAddedResponse, FuellingPointElement, InformationMessage, InformationMessageInfo, LoginInfo, Transaction, TransactionFinished } from "../../interfaces/ForecourtInterfaces";
+import { CustomerAddedResponse, FuellingPointElement, InformationMessage, InformationMessageInfo, LoginInfo, SettingsPar, Transaction, TransactionFinished } from "../../interfaces/ForecourtInterfaces";
 import { Customer } from "../../interfaces/TicketInterfaces";
 import { appStateValues, ForecourtState } from "../../interfaces/StateInterfaces";
 import { IMessage } from "../../interfaces/GlobalInterfaces";
@@ -22,6 +22,7 @@ const INITIAL_STATE: ForecourtState = {
   infoMessage: undefined,
   prices: {},
   customerList: [],
+  settings: []
 };
 
 export const ForecourtProvider = ({ children }: props) => {
@@ -46,6 +47,13 @@ export const ForecourtProvider = ({ children }: props) => {
     dispatch({
       type: "setLoginInfo",
       payload: loginInfo,
+    });
+  };
+
+  const setSettings = (settings: SettingsPar[]) => {
+    dispatch({
+      type: "setSettings",
+      payload: settings,
     });
   };
 
@@ -194,6 +202,9 @@ export const ForecourtProvider = ({ children }: props) => {
           break;
         case "LI":
           setLoginInfo(JSON.parse(message.MessageData));
+          break;
+        case "ST": 
+          setSettings(JSON.parse(message.MessageData))
           break;
         case "CL":
           setCustomerList(JSON.parse(message.MessageData));

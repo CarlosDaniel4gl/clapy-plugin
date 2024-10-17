@@ -191,19 +191,27 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     delete csbFiles['src/AppTemplate.tsx']
 
     // Actualizamos los imports y las rutas de las screens en mainrouter
-    const screens = await listScreens() as string[]
+    const screens = (await listScreens() as string[]).filter(s => {
+      return s.includes('Screen')
+    })
+    console.log(screens)
     csbFiles['src/routes/screens.tsx'].content = `${screens
       .map(s => `import { ${s} } from '../figma/screens/${s}/${s}'`)
       .join('\n')}\n`
     csbFiles['src/routes/screens.tsx'].content += `${Object.keys(csbFiles)
-      .filter(k => k.includes('src/figma/screens/') && !k.includes('use') && k.includes('.tsx') && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || '')))
+      .filter(k => k.includes('src/figma/screens/') && screens.find(s => k.split('/').pop()?.includes('Screen')) && !k.includes('use') && k.includes('.tsx') && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || '')))
       .map(s => `import { ${s.split('.tsx')[0].split('/').pop()} } from '../figma/screens/${s.split('.tsx')[0].split('/').pop()}/${s.split('.tsx')[0].split('/').pop()}'`)
       .join('\n')}\n`
     csbFiles['src/routes/screens.tsx'].content += `export const screens = [\n${screens
       .map(s => `{route: '${s.split('Screen')[0]}', component: <${s}/>}`)
       .join(',\n')},\n`
     csbFiles['src/routes/screens.tsx'].content += `${Object.keys(csbFiles)
-      .filter(k => k.includes('src/figma/screens/') && !k.includes('use') && k.includes('.tsx') && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || '')))
+      .filter(k => k.includes('src/figma/screens/') 
+        && screens.find(s => k.split('/').pop()?.includes('Screen')) 
+        && !k.includes('use') 
+        && k.includes('.tsx')
+        && !screens.find(s => s.includes(k.split('.tsx')[0].split('/').pop() || ''))
+      )
       .map(s => `{route: '${s.split('Screen')[0].split('/').pop()}', component: <${s.split('.tsx')[0].split('/').pop()}/>}`)
       .join(',\n')}\n]`
 

@@ -719,12 +719,13 @@ function mkWrapHideExprFragment<T extends JsxOneOrMore | ts.Expression | undefin
     factory.createIdentifier(node.hideProp),
   );
   const checkHideExpr =
-    hideDefaultValue === true
-      ? factory.createBinaryExpression(
-        hidePropVar,
-        factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
-        factory.createFalse(),
-      )
+    hideDefaultValue === true ? 
+      // factory.createBinaryExpression(
+      //   hidePropVar,
+      //   factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+      //   factory.createFalse(),
+      // )
+      hidePropVar
       : factory.createPrefixUnaryExpression(ts.SyntaxKind.ExclamationToken, hidePropVar);
   const ast2 = factory.createBinaryExpression(
     checkHideExpr,

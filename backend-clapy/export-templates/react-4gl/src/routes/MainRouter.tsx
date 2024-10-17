@@ -15,7 +15,7 @@ const router = createBrowserRouter([
     },
     {
         path: isPosId ? "/:posid" : "/:posid/*",
-        element: isPosId ? screens.find(s => s.route === 'NoToken')?.component
+        element: isPosId ? screens.find(s => s.route === 'Wellcome')?.component
             : screens.find(s => s.route === 'NoPosId')?.component,
     },
     ...(isPosId ? [{

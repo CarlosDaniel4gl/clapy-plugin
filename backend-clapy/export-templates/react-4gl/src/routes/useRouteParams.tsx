@@ -16,7 +16,7 @@ export const useRouteParams = () => {
     try {
         const decoded = jwtDecode(wsToken || '') as JWTPayload
         wsUrl = decoded.ws
-        // wsUrl = 'ws://192.168.1.210:4994'
+        wsUrl = 'ws://192.168.1.210:4994'
         card = decoded.card
         // const decodedHeader = jwtDecode(token, { header: true })
     } catch (e) { }
