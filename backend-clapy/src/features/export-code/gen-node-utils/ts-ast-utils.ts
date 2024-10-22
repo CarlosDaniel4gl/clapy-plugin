@@ -245,6 +245,7 @@ export function mkPropInterface(moduleContext: ModuleContext) {
   const hidePropNames = Array.from(hideProps);
   const textOverridePropNames = Array.from(textOverrideProps);
   const isScreen = compName.includes('Screen')
+  const isList = compName.includes('List')
   return factory.createInterfaceDeclaration(
     undefined,
     undefined,
@@ -297,39 +298,39 @@ export function mkPropInterface(moduleContext: ModuleContext) {
           ),
         ]),
       ...(hidePropNames?.length ? [
-          factory.createPropertySignature(
-            undefined,
-            factory.createIdentifier('hide'),
-            factory.createToken(ts.SyntaxKind.QuestionToken),
-            factory.createTypeLiteralNode(
-              hidePropNames.map(name =>
-                factory.createPropertySignature(
-                  undefined,
-                  factory.createIdentifier(name),
-                  factory.createToken(ts.SyntaxKind.QuestionToken),
-                  factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
-                ),
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier('hide'),
+          factory.createToken(ts.SyntaxKind.QuestionToken),
+          factory.createTypeLiteralNode(
+            hidePropNames.map(name =>
+              factory.createPropertySignature(
+                undefined,
+                factory.createIdentifier(name),
+                factory.createToken(ts.SyntaxKind.QuestionToken),
+                factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword),
               ),
             ),
           ),
-        ] : []),
-      ...(textOverridePropNames?.length? [
-          factory.createPropertySignature(
-            undefined,
-            factory.createIdentifier('text'),
-            factory.createToken(ts.SyntaxKind.QuestionToken),
-            factory.createTypeLiteralNode(
-              textOverridePropNames.map(name =>
-                factory.createPropertySignature(
-                  undefined,
-                  factory.createIdentifier(name),
-                  factory.createToken(ts.SyntaxKind.QuestionToken),
-                  factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
-                ),
+        ),
+      ] : []),
+      ...(textOverridePropNames?.length ? [
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier('text'),
+          factory.createToken(ts.SyntaxKind.QuestionToken),
+          factory.createTypeLiteralNode(
+            textOverridePropNames.map(name =>
+              factory.createPropertySignature(
+                undefined,
+                factory.createIdentifier(name),
+                factory.createToken(ts.SyntaxKind.QuestionToken),
+                factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
               ),
             ),
           ),
-        ] : []),
+        ),
+      ] : []),
       ...(Array.from(onClickOverrideProps).length > 0 ? [
         factory.createPropertySignature(
           undefined,
@@ -348,6 +349,16 @@ export function mkPropInterface(moduleContext: ModuleContext) {
                 )
               ),
             ),
+          ),
+        ),
+      ] : []),
+      ...(isList ? [
+        factory.createPropertySignature(
+          undefined,
+          factory.createIdentifier('array'),
+          factory.createToken(ts.SyntaxKind.QuestionToken),
+          ts.factory.createArrayTypeNode(
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword) // Type 'any'
           ),
         ),
       ] : []),
@@ -376,16 +387,20 @@ export function mkCompFunction(
   prefixStatements: Statement[] = [],
   skipAnnotation?: boolean,
 ) {
-  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick, hideProps } = moduleContext;
+  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick, hideProps, swaps } = moduleContext;
   const textOverridePropNames = Array.from(textOverrideProps);
   const classes = Array.from(classOverrides);
   let returnedExpression = jsxOneOrMoreToJsxExpression(tsx);
   const isScreen = compName.includes('Screen')
+  const isList = compName.includes('List')
 
   const hasOnClickChild = Array.from(onClickOverrideProps).length > 0
   const hasUseOnClick = hasOnClick || hasOnClickChild || isScreen
   const hasUseText = textOverridePropNames?.length || isScreen
   const hasHidde = Array.from(hideProps).length > 0 || isScreen
+  const hasSwap = Array.from(swaps).length > 0 || isScreen
+  const hasArray = !!returnedExpression.children.find(c =>
+    c.tagName?.escapedText?.includes('List')) || isList
 
   // Create the component function as AST node
   const componentVariableStatement = factory.createVariableStatement(
@@ -483,7 +498,9 @@ export function mkCompFunction(
                             // ),
                             // OnClick
                             !!hasUseOnClick && factory.createBindingElement(undefined, undefined, factory.createIdentifier('clicks')),
-                            !!hasHidde && factory.createBindingElement(undefined, undefined, factory.createIdentifier('hide'))
+                            !!hasHidde && factory.createBindingElement(undefined, undefined, factory.createIdentifier('hide')),
+                            !!hasSwap && factory.createBindingElement(undefined, undefined, factory.createIdentifier('swap')),
+                            !!hasArray && factory.createBindingElement(undefined, undefined, factory.createIdentifier('array')),
                           ].filter(o => !!o)),
                           undefined,
                           undefined,
@@ -498,7 +515,7 @@ export function mkCompFunction(
                     ),
                   ),
                   // Add return Element
-                  factory.createReturnStatement(returnedExpression),
+                  !isList ? factory.createReturnStatement(returnedExpression) : factory.createReturnStatement(replaceJsxElementInAst(returnedExpression)),
                 ],
                 true,
               ),
@@ -515,6 +532,113 @@ export function mkCompFunction(
   }
 
   return componentVariableStatement;
+}
+
+const newJsxElement = (node: ts.Node) => ts.factory.createJsxElement(
+  ts.factory.createJsxOpeningElement(
+    ts.factory.createIdentifier("div"),
+    undefined,
+    ts.factory.createJsxAttributes([ts.factory.createJsxAttribute(
+      ts.factory.createIdentifier("className"),
+      ts.factory.createJsxExpression(undefined, ts.factory.createTemplateExpression(
+        ts.factory.createTemplateHead(""),
+        [
+          ts.factory.createTemplateSpan(
+            ts.factory.createPropertyAccessExpression(
+              ts.factory.createIdentifier("resets"),
+              ts.factory.createIdentifier("clapyResets")
+            ),
+            ts.factory.createTemplateMiddle(" ")
+          ),
+          ts.factory.createTemplateSpan(
+            ts.factory.createPropertyAccessExpression(
+              ts.factory.createIdentifier("classes"),
+              ts.factory.createIdentifier("root")
+            ),
+            ts.factory.createTemplateTail("")
+          )
+        ]
+      ))
+    )])
+  ),
+  [ts.factory.createJsxExpression(
+    undefined,
+    ts.factory.createConditionalExpression(
+      ts.factory.createIdentifier("array"),
+      ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+      ts.factory.createCallExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createIdentifier("array"),
+          ts.factory.createIdentifier("map")
+        ),
+        undefined,
+        [ts.factory.createArrowFunction(
+          undefined,
+          undefined,
+          [
+            ts.factory.createParameterDeclaration(
+              undefined,
+              undefined,
+              undefined,
+              ts.factory.createIdentifier("c"),
+              undefined,
+              undefined,
+              undefined
+            )
+          ],
+          undefined,
+          ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+          ts.factory.createPropertyAccessExpression(
+            ts.factory.createIdentifier("c"),
+            ts.factory.createIdentifier("comp")
+          )
+        )]
+      ),
+      ts.factory.createToken(ts.SyntaxKind.ColonToken),
+      ts.factory.createJsxFragment(
+        ts.factory.createJsxOpeningFragment(),
+        // [ts.factory.createJsxSelfClosingElement(
+        //   ts.factory.createIdentifier("div"),
+        //   undefined,
+        //   ts.factory.createJsxAttributes([])
+        // )],
+        node.children,
+        ts.factory.createJsxJsxClosingFragment()
+      )
+    )
+  )],
+  ts.factory.createJsxClosingElement(ts.factory.createIdentifier("div"))
+);
+
+function replaceJsxElementInAst(node: ts.Node): ts.Node {
+  if (ts.isJsxElement(node)) {
+    // Check if this is the <div> we want to replace
+    const tagName = node.openingElement?.tagName?.escapedText;
+    // const childTagName = node.child.;
+    if (tagName === "div") {
+      // Return the new JSX element
+      return newJsxElement(node);
+    }
+  }
+
+  // Step 3: Recursively visit child nodes and try to replace the target node
+  return ts.visitEachChild(node, replaceJsxElementInAst, {
+    factory: ts.factory,
+    getCompilerOptions: () => ({}),
+    startLexicalEnvironment: () => { },
+    suspendLexicalEnvironment: () => { },
+    resumeLexicalEnvironment: () => { },
+    endLexicalEnvironment: () => [],
+    hoistFunctionDeclaration: () => { },
+    hoistVariableDeclaration: () => { },
+    requestEmitHelper: () => { },
+    readEmitHelpers: () => undefined,
+    isEmitNotificationEnabled: () => false,
+    enableEmitNotification: () => { },
+    disableEmitNotification: () => { },
+    onSubstituteNode: () => (node: any) => node,
+    onEmitNode: () => { },
+  } as ts.TransformationContext);
 }
 
 export function wrapWithFigmaIdAnnotation<T extends Node>(node: T, moduleContext: ModuleContext) {
@@ -661,7 +785,8 @@ export function mkSwapInstanceAndHideWrapper(
     const expr = jsxOneOrMoreToExpression(ast);
     ast = factory.createBinaryExpression(
       factory.createPropertyAccessChain(
-        factory.createPropertyAccessExpression(factory.createIdentifier('props'), factory.createIdentifier('swap')),
+        // factory.createPropertyAccessExpression(factory.createIdentifier('props'), factory.createIdentifier('swap')),
+        factory.createIdentifier('swap'),
         factory.createToken(ts.SyntaxKind.QuestionDotToken),
         factory.createIdentifier(node.swapName),
       ),
@@ -719,7 +844,7 @@ function mkWrapHideExprFragment<T extends JsxOneOrMore | ts.Expression | undefin
     factory.createIdentifier(node.hideProp),
   );
   const checkHideExpr =
-    hideDefaultValue === true ? 
+    hideDefaultValue === true ?
       // factory.createBinaryExpression(
       //   hidePropVar,
       //   factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
@@ -739,7 +864,7 @@ export function mkWrapHideAndTextOverrideAst<T extends boolean>(
   context: NodeContext,
   ast: JsxOneOrMore | undefined,
   node: SceneNode2,
-  isJsExprAllowed: T, 
+  isJsExprAllowed: T,
 ): T extends true
   ? JsxOneOrMore | ts.BinaryExpression | ts.ConditionalExpression | undefined
   : JsxOneOrMore | undefined {
@@ -1060,6 +1185,16 @@ export function mkOnClickOverridesAttribute(instanceOnClickOverrides: CompContex
         true,
       ),
     ),
+  );
+}
+
+export function mkArrayOverridesAttribute(instanceOnClickOverrides: CompContext['instanceOnClickOverrides'], id: string) {
+  return factory.createJsxAttribute(
+    factory.createIdentifier("array"), // Prop name 'array'
+    factory.createJsxExpression(
+      undefined,
+      factory.createIdentifier("array") // The value is an identifier 'array'
+    )
   );
 }
 

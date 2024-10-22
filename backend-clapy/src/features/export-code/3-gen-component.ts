@@ -130,6 +130,7 @@ export function mkModuleContext(
     classNamesAlreadyUsed: new Set(['root']),
     classOverrides: new Set(),
     swaps: new Set(),
+    // arrays: new Set(),
     subComponentNamesAlreadyUsed: new Set([compName]),
     importsAlreadyAdded: new Map(),
     cssRules: [],

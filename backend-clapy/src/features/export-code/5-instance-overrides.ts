@@ -30,6 +30,7 @@ import {
   isFrame,
   isGroup,
   isInstance,
+  isSwap,
   isText,
   isValidNode,
   isVector,
@@ -84,12 +85,12 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
     if (!visible && context.isRootInComponent) {
       // It happens, we stop here. We may just need to ensure the instance node has a hideProp true on it.
       // return;
-      console.log('')
     }
     addHideOverride(context, node);
+    // if (isSwap(node)) 
+    //   addSwapInstance(context, node, ast as JsxOneOrMore);
     if (!node.visible) {
       //return;
-      console.log('')
     }
 
     if (!isRootInComponent) {
@@ -172,9 +173,6 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
     if (isRootInComponent && tagName === 'div' && baseCompName.includes('Button')) {
       addOnClickOverride(context, node, styles);
     }
-
-    if (baseCompName.includes('Modal'))
-      console.log('')
 
     if (isText(node)) {
       context.notOverridingAnotherClass = true;
@@ -516,6 +514,10 @@ function addHideOverride(context: InstanceContext, node: SceneNode2) {
 
   if (node.visible !== lastIntermediateNode.visible) {
     getOrGenHideProp(moduleContext, node);
+  }
+
+  if (isSwap(node)) {
+    getOrGenSwapName(moduleContext, node);
   }
 
   addHideOverride2(intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps, node);

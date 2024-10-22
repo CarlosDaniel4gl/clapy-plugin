@@ -327,6 +327,10 @@ export function isBlockNode(node: BaseNode2 | SceneNode2 | Nil): node is BlockNo
   );
 }
 
+export function isSwap(node: BaseNode2 | SceneNode2 | Nil): boolean {
+  return node?.componentContext?.node.parent.name.includes('Swap')
+}
+
 export type ValidNode = BlockNode | TextNode2 | VectorNodeDerived;
 
 export function isValidNode(node: BaseNode2 | SceneNode2 | Nil): node is ValidNode {

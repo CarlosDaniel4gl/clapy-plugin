@@ -27,6 +27,7 @@ import {
   createClassAttrForClassNoOverride,
   createClassAttrForNode,
   getOrCreateCompContext,
+  mkArrayOverridesAttribute,
   mkClassAttr2,
   mkClassAttr3,
   mkClassesAttribute2,
@@ -316,6 +317,10 @@ export function createComponentUsageWithAttributes(compContext: CompContext, com
   const onClickOverrideAttr = mkOnClickOverridesAttribute(instanceOnClickOverrides, id as string);
   if (onClickOverrideAttr)
     attrs.push(onClickOverrideAttr);
+
+  const arrayOverrideAttr = mkArrayOverridesAttribute(instanceOnClickOverrides, id as string);
+  if (arrayOverrideAttr && componentModuleContext.compName.includes('List'))
+    attrs.push(arrayOverrideAttr);
 
   return mkComponentUsage(componentModuleContext.compName, attrs);
 }
