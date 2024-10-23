@@ -279,9 +279,10 @@ export function createComponentUsageWithAttributes(compContext: CompContext, com
     projectContext: { extraConfig },
     hasOnClick,
     node: { id },
+    swaps
   } = componentModuleContext;
 
-  const wwwwwswwss = componentModuleContext
+  const wwwwwswwss = componentModuleContext.compName
 
   const attrs = [];
 
@@ -305,7 +306,7 @@ export function createComponentUsageWithAttributes(compContext: CompContext, com
   const classesAttr = mkClassesAttribute2(componentModuleContext, otherClassOverrides);
   if (classesAttr) attrs.push(classesAttr);
 
-  const swapAttr = mkSwapsAttribute(instanceSwaps);
+  const swapAttr = mkSwapsAttribute(instanceSwaps, swaps);
   if (swapAttr) attrs.push(swapAttr);
 
   const hideAttr = mkHidingsAttribute(instanceHidings);

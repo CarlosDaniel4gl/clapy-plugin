@@ -263,12 +263,15 @@ export async function exportCode({ root, components, svgs, images, styles, extra
             node.block.children.forEach(declaration => {
               const isDeclaration = declaration.type === 'Declaration'
               if (isDeclaration && declaration.property === 'width') {
-                declaration.value = csstree.parse('100%', { context: 'value' }) as Value;
+                declaration.value = csstree.parse('100vw', { context: 'value' }) as Value;
                 declaration.important = true
               }
               if (isDeclaration && declaration.property === 'height') {
-                declaration.value = csstree.parse('100%', { context: 'value' }) as Value;
+                declaration.value = csstree.parse('100vh', { context: 'value' }) as Value;
                 declaration.important = true
+              }
+              if (isDeclaration && declaration.property === 'position') {
+                declaration.value = csstree.parse('fixed', { context: 'value' }) as Value;
               }
             })
           }
@@ -277,7 +280,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
             node.block.children.forEach(declaration => {
               const isDeclaration = declaration.type === 'Declaration'
               if (isDeclaration && declaration.property === 'width') {
-                declaration.value = csstree.parse('100%', { context: 'value' }) as Value;
+                declaration.value = csstree.parse('100vw', { context: 'value' }) as Value;
                 declaration.important = true
               }
               if (isDeclaration && declaration.property === 'position') {

@@ -1,20 +1,31 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from 'react';
 
-import { ForecourtContext } from "./ForecourtContext";
-import { forecourtReducer } from "./forecourtReducer";
-import { useWebsocketTpvConnection } from "../../hooks/useWebsocketTpvConnection";
-import { CustomerAddedResponse, FuellingPointElement, InformationMessage, InformationMessageInfo, LoginInfo, SettingsPar, Transaction, TransactionFinished } from "../../interfaces/ForecourtInterfaces";
-import { Customer } from "../../interfaces/TicketInterfaces";
-import { appStateValues, ForecourtState } from "../../interfaces/StateInterfaces";
-import { IMessage } from "../../interfaces/GlobalInterfaces";
+import { useWebsocketTpvConnection } from '../../hooks/useWebsocketTpvConnection';
+import {
+  CustomerAddedResponse,
+  FuellingPointElement,
+  InformationMessage,
+  InformationMessageInfo,
+  LoginInfo,
+  SettingsPar,
+  Transaction,
+  TransactionFinished,
+  TransactionPartial,
+} from '../../interfaces/ForecourtInterfaces';
+import { IMessage } from '../../interfaces/GlobalInterfaces';
+import { appStateValues, ForecourtState } from '../../interfaces/StateInterfaces';
+import { Customer } from '../../interfaces/TicketInterfaces';
+import { ForecourtContext } from './ForecourtContext';
+import { forecourtReducer } from './forecourtReducer';
+import { GradeOption } from '../../interfaces/ForecourtInterfaces';
 
 interface props {
   children: JSX.Element | JSX.Element[];
 }
 
 const INITIAL_STATE: ForecourtState = {
-  appState: "interactive",
-  posId: parseInt(new URLSearchParams(window.location.search).get("posid")!),
+  appState: 'interactive',
+  posId: parseInt(window.location.href.replace('//', '').split('/')[1]!),
   fuellingPointElements: [],
   ticket: { Transactions: [], Customer: undefined },
   loginInfo: [],
@@ -22,51 +33,47 @@ const INITIAL_STATE: ForecourtState = {
   infoMessage: undefined,
   prices: {},
   customerList: [],
-  settings: []
+  settings: [],
 };
 
 export const ForecourtProvider = ({ children }: props) => {
-  const websocketTpvConnection: ReturnType<typeof useWebsocketTpvConnection> =
-    useWebsocketTpvConnection();
+  const websocketTpvConnection: ReturnType<typeof useWebsocketTpvConnection> = useWebsocketTpvConnection();
 
-  const [forecourtState, dispatch] = useReducer(
-    forecourtReducer,
-    INITIAL_STATE
-  );
+  const [forecourtState, dispatch] = useReducer(forecourtReducer, INITIAL_STATE);
+  const [selectedFp, setSelectedFp] = useState<FuellingPointElement | undefined>(undefined);
+  const [selectedGo, setSelectedGo] = useState<GradeOption | undefined>(undefined);
 
-  const setForecourtConfiguration = (
-    forecourtConfiguration: FuellingPointElement[]
-  ) => {
+  const setForecourtConfiguration = (forecourtConfiguration: FuellingPointElement[]) => {
     dispatch({
-      type: "setForecourtConfiguration",
+      type: 'setForecourtConfiguration',
       payload: forecourtConfiguration,
     });
   };
 
   const setLoginInfo = (loginInfo: LoginInfo[]) => {
     dispatch({
-      type: "setLoginInfo",
+      type: 'setLoginInfo',
       payload: loginInfo,
     });
   };
 
   const setSettings = (settings: SettingsPar[]) => {
     dispatch({
-      type: "setSettings",
+      type: 'setSettings',
       payload: settings,
     });
   };
 
   const setCustomerList = (customerList: Customer[]) => {
     dispatch({
-      type: "setCustomerList",
+      type: 'setCustomerList',
       payload: customerList,
     });
   };
 
   const setCustomerTicket = (customerAddedResponse: CustomerAddedResponse) => {
     dispatch({
-      type: "setCustomerTicket",
+      type: 'setCustomerTicket',
       payload: {
         customer: customerAddedResponse.Customer,
         transactions: customerAddedResponse.Transactions,
@@ -76,16 +83,13 @@ export const ForecourtProvider = ({ children }: props) => {
 
   const deleteCustomerTicket = () => {
     dispatch({
-      type: "deleteCustomerTicket",
+      type: 'deleteCustomerTicket',
     });
   };
 
-  const changeFuellingPointMainState = (
-    fuellingPointId: number,
-    fuellingPointMainState: string
-  ) => {
+  const changeFuellingPointMainState = (fuellingPointId: number, fuellingPointMainState: string) => {
     dispatch({
-      type: "changeFuellingPointMainState",
+      type: 'changeFuellingPointMainState',
       payload: {
         fuellingPointId,
         fuellingPointMainState,
@@ -93,13 +97,9 @@ export const ForecourtProvider = ({ children }: props) => {
     });
   };
 
-  const changeFuellingPointLockedFlag = (
-    fuellingPointId: number,
-    locked: boolean,
-    posId: number | undefined
-  ) => {
+  const changeFuellingPointLockedFlag = (fuellingPointId: number, locked: boolean, posId: number | undefined) => {
     dispatch({
-      type: "changeFuellingPointLockedFlag",
+      type: 'changeFuellingPointLockedFlag',
       payload: {
         fuellingPointId,
         locked,
@@ -108,12 +108,9 @@ export const ForecourtProvider = ({ children }: props) => {
     });
   };
 
-  const changeFuellingPointPresetFlag = (
-    fuellingPointId: number,
-    preset: boolean
-  ) => {
+  const changeFuellingPointPresetFlag = (fuellingPointId: number, preset: boolean) => {
     dispatch({
-      type: "changeFuellingPointPresetFlag",
+      type: 'changeFuellingPointPresetFlag',
       payload: {
         fuellingPointId,
         preset,
@@ -123,7 +120,16 @@ export const ForecourtProvider = ({ children }: props) => {
 
   const changeTransaction = (transaction: Transaction) => {
     dispatch({
-      type: "changeTransaction",
+      type: 'changeTransaction',
+      payload: {
+        transaction,
+      },
+    });
+  };
+
+  const transactionPartial = (transaction: TransactionPartial) => {
+    dispatch({
+      type: 'transactionPartial',
       payload: {
         transaction,
       },
@@ -132,7 +138,7 @@ export const ForecourtProvider = ({ children }: props) => {
 
   const removeLineFromTicket = (transaction: Transaction) => {
     dispatch({
-      type: "removeLineFromTicket",
+      type: 'removeLineFromTicket',
       payload: {
         transaction,
       },
@@ -146,18 +152,18 @@ export const ForecourtProvider = ({ children }: props) => {
    */
   const transactionFinished = (transactionFinished: TransactionFinished) => {
     forecourtState.posId === transactionFinished.PosId &&
-      forecourtState.appState === "payment" &&
+      forecourtState.appState === 'payment' &&
       setCustomerTicket({
         PosId: forecourtState.posId,
         Customer: undefined,
         Transactions: [],
       });
-    changeAppState("interactive");
+    changeAppState('interactive');
   };
 
   const changeAppState = (appState: appStateValues) => {
     dispatch({
-      type: "changeAppState",
+      type: 'changeAppState',
       payload: {
         appState,
       },
@@ -171,13 +177,13 @@ export const ForecourtProvider = ({ children }: props) => {
    */
   const informationMessage = (informationMessage: InformationMessage) => {
     forecourtState.posId === informationMessage.PosId &&
-      forecourtState.appState === "payment" &&
+      forecourtState.appState === 'payment' &&
       changeInformationMessage(informationMessage);
   };
 
   const changeInformationMessage = (infoMessage: InformationMessageInfo) => {
     dispatch({
-      type: "changeInformationMessage",
+      type: 'changeInformationMessage',
       payload: {
         infoMessage,
       },
@@ -185,59 +191,58 @@ export const ForecourtProvider = ({ children }: props) => {
   };
 
   useEffect(() => {
-    websocketTpvConnection.websocketOnline
-      ? changeAppState("interactive")
-      : changeAppState("connection-offline");
+    websocketTpvConnection.websocketOnline ? changeAppState('interactive') : changeAppState('connection-offline');
   }, [websocketTpvConnection.websocketOnline]);
 
   useEffect(() => {
     if (websocketTpvConnection.lastMessage !== null) {
-      const message: IMessage = JSON.parse(
-        websocketTpvConnection.lastMessage.data
-      );
+      const message: IMessage = JSON.parse(websocketTpvConnection.lastMessage.data);
       console.log(message.MessageCode, JSON.parse(message.MessageData));
       switch (message.MessageCode) {
-        case "FC":
+        case 'FC':
           setForecourtConfiguration(JSON.parse(message.MessageData));
           break;
-        case "LI":
+        case 'LI':
           setLoginInfo(JSON.parse(message.MessageData));
           break;
-        case "ST": 
-          setSettings(JSON.parse(message.MessageData))
+        case 'ST':
+          setSettings(JSON.parse(message.MessageData));
           break;
-        case "CL":
+        case 'CL':
           setCustomerList(JSON.parse(message.MessageData));
           break;
-        case "CA":
+        case 'CA':
           setCustomerTicket(JSON.parse(message.MessageData));
           break;
-        case "FS":
+        case 'FS':
           changeFuellingPointMainState(
             JSON.parse(message.MessageData).FuellingPointId,
-            JSON.parse(message.MessageData).FuellingPointMainState
+            JSON.parse(message.MessageData).FuellingPointMainState,
           );
           break;
-        case "FL":
+        case 'FL':
           changeFuellingPointLockedFlag(
             JSON.parse(message.MessageData).FuellingPointId,
             JSON.parse(message.MessageData).Locked,
-            JSON.parse(message.MessageData).PosId
+            JSON.parse(message.MessageData).PosId,
           );
           break;
-        case "FP":
+        case 'FP':
           changeFuellingPointPresetFlag(
             JSON.parse(message.MessageData).FuellingPointId,
-            JSON.parse(message.MessageData).Preset
+            JSON.parse(message.MessageData).Preset,
           );
           break;
-        case "CT":
+        case 'FD':
+          transactionPartial(JSON.parse(message.MessageData));
+          break;
+        case 'CT':
           changeTransaction(JSON.parse(message.MessageData));
           break;
-        case "TF":
+        case 'TF':
           transactionFinished(JSON.parse(message.MessageData));
           break;
-        case "IM":
+        case 'IM':
           informationMessage(JSON.parse(message.MessageData));
           break;
       }
@@ -248,6 +253,9 @@ export const ForecourtProvider = ({ children }: props) => {
     <ForecourtContext.Provider
       value={{
         forecourtState,
+        selectedFp,
+        setSelectedFp,
+        selectedGo, setSelectedGo,
         websocketTpvConnection,
         setForecourtConfiguration,
         setLoginInfo,

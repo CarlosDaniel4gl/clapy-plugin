@@ -9,7 +9,6 @@ export const useWebsocketTpvConnection = () => {
   const { t } = useTranslation();
   const { wsUrl, wsToken } = useRouteParams()
   const socketUrl = `${wsUrl}/?token=${wsToken}`; //process.env.REACT_APP_WEBSOCKET_URL!;
-  console.log("socketUrl", socketUrl);
 
   const [websocketOnline, setWebsocketOnline] = useState(false);
 

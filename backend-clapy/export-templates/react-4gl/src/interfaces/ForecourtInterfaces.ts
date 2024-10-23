@@ -1,11 +1,13 @@
-import { Customer, Promotion } from "./TicketInterfaces";
-import { Layout } from "react-grid-layout";
+import { Layout } from 'react-grid-layout';
+
+import { Customer, Promotion } from './TicketInterfaces';
 
 export interface GradeOption {
   GradeOptionNo: number;
   GradeId: number;
   Price: number;
   GradeDescription: string;
+  GradeImageBase64: string;
 }
 
 export interface Ticket {
@@ -24,6 +26,12 @@ export interface Transaction {
   GradeOptionNo: number;
   PresetValue: number;
   PromotionList: Promotion[];
+}
+
+export interface TransactionPartial {
+  FuellingPointId: number, 
+  Money: number, 
+  Volume: number
 }
 
 export interface TransactionFinished {
@@ -99,15 +107,15 @@ export interface FuellingPointElement extends Layout {
 }
 
 export interface SettingsPar {
-  Key: string
-  Value: string
+  Key: string;
+  Value: string;
 }
 
 export interface Settings {
-  CardPayment: boolean
-  BlankPumpScreenWithoutItems: boolean
-  CreditCustomerModule: boolean
-  StationName?: string
+  CardPayment: boolean;
+  BlankPumpScreenWithoutItems: boolean;
+  CreditCustomerModule: boolean;
+  StationName?: string;
 }
 
 export interface FinishTransactionRequest {

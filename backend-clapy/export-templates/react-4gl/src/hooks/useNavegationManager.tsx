@@ -11,11 +11,11 @@ export const useNavigationManager = () => {
   const { posId, wsToken } = useRouteParams();
   const nav = useNavigate();
   useEffect(() => {
-    if (loginActive > 0) {
-      nav(`/${posId}/${wsToken}/Pista`);
-    } else if (loginActive < 0) {
-      nav(`/${posId}/${wsToken}/UserPassword`);
-    }
+    // if (loginActive > 0) {
+    //   nav(`/${posId}/${wsToken}/Pista`);
+    // } else if (loginActive < 0) {
+    //   nav(`/${posId}/${wsToken}/UserPassword`);
+    // }
   }, [loginActive]);
   return { nav };
 };

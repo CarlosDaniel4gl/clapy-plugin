@@ -294,7 +294,7 @@ export function mkPropInterface(moduleContext: ModuleContext) {
                   factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
                 ),
               ),
-            ),
+            ), 
           ),
         ]),
       ...(hidePropNames?.length ? [
@@ -1001,9 +1001,17 @@ export function mkClassesAttribute2(moduleContext: ModuleContext, otherClassOver
 }
 
 // Those mk* overrides methods can be refactored. They share a common structure.
-export function mkSwapsAttribute(swaps: CompContext['instanceSwaps']) {
+export function mkSwapsAttribute(swaps: CompContext['instanceSwaps'], moreSwaps: Set<string>) {
   const swapsArr = Object.values(swaps);
-  if (!swapsArr.length) return undefined;
+  const moreSwapsArr = Array.from(moreSwaps);
+  if (!swapsArr.length && !moreSwapsArr.length) return undefined
+  else if (!swapsArr.length &&  !!moreSwapsArr.length) return factory.createJsxAttribute(
+    factory.createIdentifier("swap"), // Attribute name: swap
+    factory.createJsxExpression(
+      undefined,
+      factory.createIdentifier("swap")  // Expression: swap
+    )
+);
   return factory.createJsxAttribute(
     factory.createIdentifier('swap'),
     factory.createJsxExpression(

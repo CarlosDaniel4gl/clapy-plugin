@@ -504,7 +504,7 @@ function addHideOverride(context: InstanceContext, node: SceneNode2) {
   }
 
   const lastIntermediateNode = intermediateNodes[intermediateNodes.length - 1];
-  if (!lastIntermediateNode) {
+  if (!lastIntermediateNode) { 
     throw new Error(`BUG Last entry of intermediateNodes is undefined.`);
   }
 
