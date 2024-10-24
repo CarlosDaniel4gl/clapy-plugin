@@ -4,6 +4,11 @@ import { AddCustomerRequest, CancelPresetRequest, ChangeLockFuellingPointRequest
 import { IMessage } from "../interfaces/GlobalInterfaces";
 import { isPrepay } from "./TransactionUtil";
 
+const send = (message: string, sendMessage: any) => {
+  sendMessage(message)
+  console.log(message)
+}
+
 /**
  * Enviamos una instrucción para alternar un surtidor entre autorizado y desautorizado.
  *
@@ -26,7 +31,8 @@ export const sendToggleFuellingPointAuthorization = (
     MessageData: JSON.stringify(toggleFuellingPointAuthorizationMessageData),
   };
 
-  sendMessage(JSON.stringify(toggleFuellingPointAuthorizationMessage));
+  //sendMessage(JSON.stringify(toggleFuellingPointAuthorizationMessage));
+  send( JSON.stringify(toggleFuellingPointAuthorizationMessage), sendMessage);
 };
 
 /**
@@ -52,7 +58,8 @@ export const sendLockFuellingPoint = (
     MessageData: JSON.stringify(lockFuellingPointMessageData),
   };
 
-  sendMessage(JSON.stringify(lockFuellingPointMessage));
+  //sendMessage(JSON.stringify(lockFuellingPointMessage));
+  send( JSON.stringify(lockFuellingPointMessage), sendMessage);
 };
 
 /**
@@ -78,7 +85,8 @@ export const sendUnlockFuellingPoint = (
     MessageData: JSON.stringify(CancelPresetMessageData),
   };
 
-  sendMessage(JSON.stringify(unlockFuellingPointMessage));
+  //sendMessage(JSON.stringify(unlockFuellingPointMessage));
+  send( JSON.stringify(unlockFuellingPointMessage), sendMessage);
 };
 
 /**
@@ -105,7 +113,8 @@ export const sendLockTransaction = (
     MessageData: JSON.stringify(lockTransactionMessageData),
   };
 
-  sendMessage(JSON.stringify(lockTransactionMessage));
+  //sendMessage(JSON.stringify(lockTransactionMessage));
+  send( JSON.stringify(lockTransactionMessage), sendMessage);
 };
 
 /**
@@ -131,7 +140,8 @@ export const sendUnlockTransaction = (
     MessageCode: UNLOCK_TRANSACTION,
     MessageData: JSON.stringify(unlockTransactionMessageData),
   };
-  sendMessage(JSON.stringify(unlockTransactionMessage));
+  //sendMessage(JSON.stringify(unlockTransactionMessage));
+  send(JSON.stringify(unlockTransactionMessage), sendMessage);
 };
 
 /**
@@ -156,7 +166,8 @@ export const sendLockPresetTransaction = (
     MessageData: JSON.stringify(lockPresetTransactionMessageData),
   };
 
-  sendMessage(JSON.stringify(lockPresetTransactionMessage));
+  //sendMessage(JSON.stringify(lockPresetTransactionMessage));
+  send( JSON.stringify(lockPresetTransactionMessage), sendMessage);
 };
 
 /**
@@ -180,7 +191,8 @@ export const sendUnlockPresetTransaction = (
     MessageCode: UNLOCK_PRESET_TRANSACTION,
     MessageData: JSON.stringify(unlockPresetTransactionMessageData),
   };
-  sendMessage(JSON.stringify(unlockPresetTransactionMessage));
+  //sendMessage(JSON.stringify(unlockPresetTransactionMessage));
+  send( JSON.stringify(unlockPresetTransactionMessage), sendMessage);
 };
 
 /**
@@ -206,7 +218,8 @@ export const sendCancelPreset = (
     MessageData: JSON.stringify(cancelPresetMessageData),
   };
 
-  sendMessage(JSON.stringify(cancelPresetMessage));
+  //sendMessage(JSON.stringify(cancelPresetMessage));
+  send( JSON.stringify(cancelPresetMessage), sendMessage);
 };
 
 /**
@@ -251,7 +264,8 @@ export const sendFinishTransaction = (
     MessageCode: FINISH_TRANSACTION,
     MessageData: JSON.stringify(finishTransactionMessageData),
   };
-  sendMessage(JSON.stringify(finishTransactionMessage));
+  //sendMessage(JSON.stringify(finishTransactionMessage));
+  send( JSON.stringify(finishTransactionMessage), sendMessage);
 };
 
 /**
@@ -276,7 +290,8 @@ export const searchCustomer = (
     MessageData: JSON.stringify(searchCustomerMessageData),
   };
 
-  sendMessage(JSON.stringify(searchCustomerMessage));
+  //sendMessage(JSON.stringify(searchCustomerMessage));
+  send( JSON.stringify(searchCustomerMessage), sendMessage);
 };
 
 /**
@@ -313,5 +328,6 @@ export const sendAddCustomer = (
     MessageCode: ADD_CUSTOMER,
     MessageData: JSON.stringify(addCustomerMessageData),
   };
-  sendMessage(JSON.stringify(addCustomerMessage));
+  //sendMessage(JSON.stringify(addCustomerMessage));
+  send( JSON.stringify(addCustomerMessage), sendMessage);
 };

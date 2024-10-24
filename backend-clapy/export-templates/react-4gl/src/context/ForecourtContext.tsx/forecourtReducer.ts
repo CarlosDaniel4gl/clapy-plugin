@@ -77,6 +77,11 @@ type ForecourtAction =
 
 export const forecourtReducer = (state: ForecourtState, action: ForecourtAction): ForecourtState => {
   switch (action.type) {
+    case 'setSettings':
+      return {
+        ...state,
+        settings: action.payload,
+      };
     case 'changeInformationMessage':
       return {
         ...state,
