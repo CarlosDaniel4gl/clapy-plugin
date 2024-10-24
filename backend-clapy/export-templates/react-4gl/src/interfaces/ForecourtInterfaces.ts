@@ -126,6 +126,7 @@ export interface FinishTransactionRequest {
   AmountDelivered: number;
   IdCustomer: number | undefined;
   IdCardVehicleInfo: number | undefined;
+  SignatureBase64: string | undefined
 }
 
 export interface FuellingTransaction {

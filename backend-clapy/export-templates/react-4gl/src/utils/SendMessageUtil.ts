@@ -240,6 +240,7 @@ export const sendFinishTransaction = (
   amountDelivered: number,
   idCustomer: number | undefined,
   idCardVehicleInfo: number | undefined,
+  signatureBase64: string | undefined,
   sendMessage: (message: string) => void
 ) => {
   const finishTransactionMessageData: FinishTransactionRequest = {
@@ -258,6 +259,7 @@ export const sendFinishTransaction = (
     AmountDelivered: amountDelivered,
     IdCustomer: idCustomer,
     IdCardVehicleInfo: idCardVehicleInfo,
+    SignatureBase64: signatureBase64
   };
 
   const finishTransactionMessage: IMessage = {
