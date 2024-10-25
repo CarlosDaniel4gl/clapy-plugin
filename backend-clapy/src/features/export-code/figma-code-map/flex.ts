@@ -218,7 +218,7 @@ export function flexFigmaToCode(context: NodeContext, node: ValidNode, styles: D
 
     const shouldGapMain = checkShouldApplyGapMain(node);
     const shouldGapCounter = checkShouldApplyGapCounter(node);
-    const reverse = shouldGapMain && node.itemReverseZIndex;
+    const reverse = false //shouldGapMain && node.itemReverseZIndex;
 
     const isHorizontal = node.layoutMode === 'HORIZONTAL';
     if ((defaultIsVertical ? isHorizontal : !isHorizontal) || reverse) {

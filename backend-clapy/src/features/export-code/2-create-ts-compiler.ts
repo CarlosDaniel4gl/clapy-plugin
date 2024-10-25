@@ -276,7 +276,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
             })
           }
           // Si es un bottom tab [absolte, 0, 0, 0]
-          else if (absolute && bottom && left && right && width) {
+          else if (absolute && (bottom || top) && left && right && width) {
             node.block.children.forEach(declaration => {
               const isDeclaration = declaration.type === 'Declaration'
               if (isDeclaration && declaration.property === 'width') {
@@ -292,7 +292,10 @@ export async function exportCode({ root, components, svgs, images, styles, extra
           node.block.children.forEach((declaration, item) => {
             const isDeclaration = declaration.type === 'Declaration'
             const value = isDeclaration && csstree.generate(declaration.value)
-            if (isDeclaration && declaration.property === 'background-color' && value === 'initial') {
+            // if (isDeclaration && declaration.property === 'background-color' && value === 'initial') {
+            //   node.block.children.remove(item);
+            // }
+            if (isDeclaration && value === 'initial') {
               node.block.children.remove(item);
             }
           })
