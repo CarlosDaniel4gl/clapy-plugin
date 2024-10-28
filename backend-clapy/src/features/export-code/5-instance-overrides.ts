@@ -42,6 +42,7 @@ import type { FwNodeOneOrMore } from './frameworks/framework-connectors.js';
 import { createComponentUsageWithAttributes } from './frameworks/react/index.js';
 import { addHiddenNodeToInstance } from './gen-node-utils/default-node.js';
 import {
+  getOrGenArrayName,
   getOrGenClassName,
   getOrGenHideProp,
   getOrGenOnClickOverrideProp,
@@ -69,6 +70,7 @@ import { guessTagNameAndUpdateNode } from './smart-guesses/guessTagName.js';
 export function genInstanceOverrides(context: InstanceContext, node: SceneNode2) {
   try {
     const { parentNode, moduleContext, componentContext, componentContext: { baseCompName }, nodeOfComp, isRootInComponent, tagName } = context;
+    const isList = baseCompName.includes('List')
     if (!isRootInComponent) {
       // The root node is an instance node, also used where the instance is used, and a context is already attached there.
       // It shouldn't be overridden, otherwise we get a wrong node.isRootInComponent in the instance usage.
@@ -173,6 +175,9 @@ export function genInstanceOverrides(context: InstanceContext, node: SceneNode2)
     if (isRootInComponent && tagName === 'div' && baseCompName.includes('Button')) {
       addOnClickOverride(context, node, styles);
     }
+
+    if (isList)
+      addArrayOverride(context, node, styles)
 
     if (isText(node)) {
       context.notOverridingAnotherClass = true;
@@ -483,6 +488,23 @@ function addSwapInstance(context: InstanceContext, node: SceneNode2, swapAst: Js
   addHideOverride2(intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps, node);
 }
 
+function addArrayOverride(context: InstanceContext, node: SceneNode2, styles: Dict<DeclarationPlain>) {
+  let { intermediateNodes, intermediateComponentContexts, intermediateInstanceNodeOfComps } = context;
+
+  // Check that the text of current node changed vs the next intermediate component
+  const nextIntermediateNode = intermediateNodes[1];
+
+  addOverrides(
+    intermediateNodes,
+    intermediateComponentContexts,
+    intermediateInstanceNodeOfComps,
+    '',
+    (componentContext, intermediateNode) => getOrGenArrayName(componentContext, intermediateNode),
+    'instanceArrayOverrides',
+    'arrayOverrideProp',
+  );
+}
+
 function addHideOverride(context: InstanceContext, node: SceneNode2) {
   let {
     intermediateNodes,
@@ -504,7 +526,7 @@ function addHideOverride(context: InstanceContext, node: SceneNode2) {
   }
 
   const lastIntermediateNode = intermediateNodes[intermediateNodes.length - 1];
-  if (!lastIntermediateNode) { 
+  if (!lastIntermediateNode) {
     throw new Error(`BUG Last entry of intermediateNodes is undefined.`);
   }
 
@@ -600,8 +622,8 @@ function addOverrides(
   intermediateInstanceNodeOfComps: InstanceContext['intermediateInstanceNodeOfComps'],
   overrideValue: SwapAst | string | boolean | FwNodeOneOrMore | ts.BinaryExpression | ts.ConditionalExpression,
   genAndRegisterPropName: (componentContext: ModuleContext, intermediateNode: SceneNode2) => string,
-  compContextField: 'instanceStyleOverrides' | 'instanceSwaps' | 'instanceHidings' | 'instanceTextOverrides' | 'instanceOnClickOverrides',
-  nodeFieldForOverrideValue: 'className' | 'swapName' | 'hideProp' | 'textOverrideProp' | 'onClickOverrideProp',
+  compContextField: 'instanceStyleOverrides' | 'instanceSwaps' | 'instanceArrayOverrides' | 'instanceHidings' | 'instanceTextOverrides' | 'instanceOnClickOverrides',
+  nodeFieldForOverrideValue: 'className' | 'swapName' | 'arrayOverrideProp' | 'hideProp' | 'textOverrideProp' | 'onClickOverrideProp',
 ) {
   for (let i = 1; i < intermediateNodes.length; i++) {
     const intermediateNode = intermediateNodes[i];

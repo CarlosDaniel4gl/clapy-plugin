@@ -40,6 +40,24 @@ export function getOrGenSwapName(componentContext: ModuleContext, node?: SceneNo
   return swapName;
 }
 
+export function getOrGenArrayName(
+  componentContext: ModuleContext,
+  node?: SceneNode2,
+  arrayOverrideBaseName?: string,
+) {
+  if (!node?.name && !arrayOverrideBaseName) {
+    throw new Error(
+      `Either a node with a name or a arrayOverrideBaseName is required to generate a arrayOverrideProp on module ${componentContext.compName}`,
+    );
+  }
+  const baseName = 'array' //node?.name || arraykOverrideBaseName!;
+  const arrayOverrideProp = genUniqueName(componentContext.arrayOverrideProps, baseName);
+  if (node) {
+    node.arrayOverrideProp = arrayOverrideProp;
+  }
+  return arrayOverrideProp;
+}
+
 export function getOrGenHideProp(componentContext: ModuleContext, node?: SceneNode2, hideBaseName?: string) {
   if (node?.hideProp) {
     return node.hideProp;
@@ -59,7 +77,7 @@ export function getOrGenHideProp(componentContext: ModuleContext, node?: SceneNo
 
 export function getOrGenTextOverrideProp(
   componentContext: ModuleContext,
-  node?: SceneNode2, 
+  node?: SceneNode2,
   textOverrideBaseName?: string,
 ) {
   const compName = componentContext.compName

@@ -274,12 +274,13 @@ function genInstanceLikeAst(node: SceneNode2, extraAttributes: ts.JsxAttribute[]
 }
 
 export function createComponentUsageWithAttributes(compContext: CompContext, componentModuleContext: ModuleContext) {
-  const { instanceSwaps, instanceHidings, instanceStyleOverrides, instanceTextOverrides, instanceOnClickOverrides } = compContext;
+  const { instanceSwaps, instanceHidings, instanceStyleOverrides, instanceTextOverrides, instanceOnClickOverrides, instanceArrayOverrides } = compContext;
   const {
     projectContext: { extraConfig },
     hasOnClick,
     node: { id },
-    swaps
+    swaps,
+    arrayOverrideProps
   } = componentModuleContext;
 
   const wwwwwswwss = componentModuleContext.compName
@@ -319,8 +320,8 @@ export function createComponentUsageWithAttributes(compContext: CompContext, com
   if (onClickOverrideAttr)
     attrs.push(onClickOverrideAttr);
 
-  const arrayOverrideAttr = mkArrayOverridesAttribute(instanceOnClickOverrides, id as string);
-  if (arrayOverrideAttr && componentModuleContext.compName.includes('List'))
+  const arrayOverrideAttr = mkArrayOverridesAttribute(instanceArrayOverrides, id as string);
+  if (arrayOverrideAttr/* && componentModuleContext.compName.includes('List')*/)
     attrs.push(arrayOverrideAttr);
 
   return mkComponentUsage(componentModuleContext.compName, attrs);

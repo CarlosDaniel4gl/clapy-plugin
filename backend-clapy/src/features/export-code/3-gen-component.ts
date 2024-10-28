@@ -141,6 +141,7 @@ export function mkModuleContext(
     hideProps: new Set(),
     textOverrideProps: new Set(),
     onClickOverrideProps: new Set(),
+    arrayOverrideProps: new Set(),
   };
   return moduleContext;
 }

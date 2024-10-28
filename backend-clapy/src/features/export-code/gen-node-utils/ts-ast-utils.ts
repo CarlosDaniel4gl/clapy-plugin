@@ -8,6 +8,7 @@ import { warnOrThrow } from '../../../utils.js';
 import { nodeDefaults, type ExtraConfig, type SceneNodeNoMethod } from '../../sb-serialize-preview/sb-serialize.model.js';
 import type {
   BaseOnClickOverrie,
+  BaseArrayOverrie,
   BaseStyleOverride,
   CompContext,
   FigmaOverride,
@@ -152,6 +153,7 @@ export function getOrCreateCompContext(node: SceneNode2) {
       instanceSwaps: {},
       instanceTextOverrides: {},
       instanceOnClickOverrides: {},
+      instanceArrayOverrides: {},
     };
   }
   return node._context;
@@ -239,7 +241,7 @@ export function mkNamedImportsDeclaration(
 }
 
 export function mkPropInterface(moduleContext: ModuleContext) {
-  const { classOverrides, swaps, hideProps, textOverrideProps, compName, hasOnClick, onClickOverrideProps } = moduleContext;
+  const { classOverrides, swaps, hideProps, textOverrideProps, compName, hasOnClick, onClickOverrideProps, arrayOverrideProps } = moduleContext;
   const classes = Array.from(classOverrides);
   const swapsArr = Array.from(swaps);
   const hidePropNames = Array.from(hideProps);
@@ -294,7 +296,7 @@ export function mkPropInterface(moduleContext: ModuleContext) {
                   factory.createTypeReferenceNode(factory.createIdentifier('ReactNode'), undefined),
                 ),
               ),
-            ), 
+            ),
           ),
         ]),
       ...(hidePropNames?.length ? [
@@ -352,13 +354,22 @@ export function mkPropInterface(moduleContext: ModuleContext) {
           ),
         ),
       ] : []),
-      ...(isList ? [
+      ...(Array.from(arrayOverrideProps).length > 0 ? [
         factory.createPropertySignature(
           undefined,
           factory.createIdentifier('array'),
           factory.createToken(ts.SyntaxKind.QuestionToken),
-          ts.factory.createArrayTypeNode(
-            ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword) // Type 'any'
+          factory.createTypeLiteralNode(
+            Array.from(arrayOverrideProps).map(name =>
+              factory.createPropertySignature(
+                undefined,
+                factory.createIdentifier(name),
+                factory.createToken(ts.SyntaxKind.QuestionToken),
+                ts.factory.createArrayTypeNode(
+                  ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword) // Type 'any'
+                ),
+              ),
+            ),
           ),
         ),
       ] : []),
@@ -387,7 +398,7 @@ export function mkCompFunction(
   prefixStatements: Statement[] = [],
   skipAnnotation?: boolean,
 ) {
-  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick, hideProps, swaps } = moduleContext;
+  const { classOverrides, compName, textOverrideProps, onClickOverrideProps, hasOnClick, hideProps, swaps, arrayOverrideProps } = moduleContext;
   const textOverridePropNames = Array.from(textOverrideProps);
   const classes = Array.from(classOverrides);
   let returnedExpression = jsxOneOrMoreToJsxExpression(tsx);
@@ -396,11 +407,15 @@ export function mkCompFunction(
 
   const hasOnClickChild = Array.from(onClickOverrideProps).length > 0
   const hasUseOnClick = hasOnClick || hasOnClickChild || isScreen
+
+  const hasArray = !!returnedExpression.children.find(c =>
+    c.tagName?.escapedText?.includes('List')) || isList
+  const hasArrayChild = Array.from(arrayOverrideProps).length > 0
+  const hasUseArray = hasArrayChild || isList || hasArray
+
   const hasUseText = textOverridePropNames?.length || isScreen
   const hasHidde = Array.from(hideProps).length > 0 || isScreen
   const hasSwap = Array.from(swaps).length > 0 || isScreen
-  const hasArray = !!returnedExpression.children.find(c =>
-    c.tagName?.escapedText?.includes('List')) || isList
 
   // Create the component function as AST node
   const componentVariableStatement = factory.createVariableStatement(
@@ -500,7 +515,7 @@ export function mkCompFunction(
                             !!hasUseOnClick && factory.createBindingElement(undefined, undefined, factory.createIdentifier('clicks')),
                             !!hasHidde && factory.createBindingElement(undefined, undefined, factory.createIdentifier('hide')),
                             !!hasSwap && factory.createBindingElement(undefined, undefined, factory.createIdentifier('swap')),
-                            !!hasArray && factory.createBindingElement(undefined, undefined, factory.createIdentifier('array')),
+                            !!hasUseArray && factory.createBindingElement(undefined, undefined, factory.createIdentifier('array')),
                           ].filter(o => !!o)),
                           undefined,
                           undefined,
@@ -564,11 +579,19 @@ const newJsxElement = (node: ts.Node) => ts.factory.createJsxElement(
   [ts.factory.createJsxExpression(
     undefined,
     ts.factory.createConditionalExpression(
-      ts.factory.createIdentifier("array"),
+      ts.factory.createPropertyAccessChain(
+        ts.factory.createIdentifier("array"), // Outer `array` object
+        ts.factory.createToken(ts.SyntaxKind.QuestionDotToken), // Optional chaining `?.`
+        ts.factory.createIdentifier("array") // Inner `array` property
+      ),
       ts.factory.createToken(ts.SyntaxKind.QuestionToken),
       ts.factory.createCallExpression(
         ts.factory.createPropertyAccessExpression(
-          ts.factory.createIdentifier("array"),
+          ts.factory.createPropertyAccessChain(
+            ts.factory.createIdentifier("array"), // Outer `array` object
+            ts.factory.createToken(ts.SyntaxKind.QuestionDotToken), // Optional chaining `?.`
+            ts.factory.createIdentifier("array") // Inner `array` property
+          ),
           ts.factory.createIdentifier("map")
         ),
         undefined,
@@ -582,7 +605,7 @@ const newJsxElement = (node: ts.Node) => ts.factory.createJsxElement(
               undefined,
               ts.factory.createIdentifier("c"),
               undefined,
-              undefined,
+              ts.factory.createTypeReferenceNode("any", undefined),
               undefined
             )
           ],
@@ -1005,13 +1028,13 @@ export function mkSwapsAttribute(swaps: CompContext['instanceSwaps'], moreSwaps:
   const swapsArr = Object.values(swaps);
   const moreSwapsArr = Array.from(moreSwaps);
   if (!swapsArr.length && !moreSwapsArr.length) return undefined
-  else if (!swapsArr.length &&  !!moreSwapsArr.length) return factory.createJsxAttribute(
+  else if (!swapsArr.length && !!moreSwapsArr.length) return factory.createJsxAttribute(
     factory.createIdentifier("swap"), // Attribute name: swap
     factory.createJsxExpression(
       undefined,
       factory.createIdentifier("swap")  // Expression: swap
     )
-);
+  );
   return factory.createJsxAttribute(
     factory.createIdentifier('swap'),
     factory.createJsxExpression(
@@ -1196,15 +1219,84 @@ export function mkOnClickOverridesAttribute(instanceOnClickOverrides: CompContex
   );
 }
 
-export function mkArrayOverridesAttribute(instanceOnClickOverrides: CompContext['instanceOnClickOverrides'], id: string) {
+export function mkArrayOverridesAttribute(instanceArrayOverrides: CompContext['instanceArrayOverrides'], id: string) {
+  const entries = Object.values(instanceArrayOverrides);
+  if (!entries.length) return undefined;
   return factory.createJsxAttribute(
-    factory.createIdentifier("array"), // Prop name 'array'
+    factory.createIdentifier('array'),
     factory.createJsxExpression(
       undefined,
-      factory.createIdentifier("array") // The value is an identifier 'array'
-    )
+      factory.createObjectLiteralExpression(
+        entries
+          .filter(e => !!e.propValue || !entries.find(e => !!e.propValue))
+          .map(overrideEntry => {
+            const { propName, overrideValue, propValue } = overrideEntry;
+            if (overrideValue == null && propValue == null) {
+              throw new Error(
+                `[mkTextOverridesAttribute] BUG Missing both overrideValue and propValue when writing overrides for node ${(overrideEntry as FigmaOverride<any>).intermediateNode?.name
+                }, prop ${(overrideEntry as FigmaOverride<any>).propName}.`,
+              );
+              // overrideEntry may not be a FigmaOverride, but the base version only, so propName and intermediateNode are not guaranteed to exist. But if they do, they bring useful information for the error message.
+            }
+
+            const propertyAccess = factory.createPropertyAccessChain(
+              ts.factory.createIdentifier("array"), // Object `clicks`
+              ts.factory.createToken(ts.SyntaxKind.QuestionDotToken), // Optional chaining `?.`
+              ts.factory.createIdentifier("array") // Property `onClick`
+            );
+
+            // Step 3: Create the function call `clicks?.onClick('8:563:')`
+            const functionCall = factory.createCallExpression(
+              propertyAccess,
+              undefined, // No type arguments
+              [factory.createStringLiteral(`${id}:${propName.split('array').join('')}`)] // Argument `'8:563:'`
+            );
+
+            // Step 4: Create the logical AND expression `clicks?.onClick && clicks?.onClick('8:563:')`
+            const logicalAnd = factory.createBinaryExpression(
+              propertyAccess, // Left-hand side `clicks?.onClick`
+              ts.factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken), // Logical AND `&&`
+              functionCall // Right-hand side `clicks?.onClick('8:563:')`
+            );
+
+            const arrowFunction = factory.createArrowFunction(
+              undefined, // No modifiers
+              undefined, // No type parameters
+              [], // No parameters
+              undefined, // No return type (inferred as `void`)
+              ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken), // The `=>` token
+              logicalAnd // The body of the arrow function (logical AND expression)
+            );
+
+            const propExpr = propValue
+              ? factory.createPropertyAccessChain(
+                factory.createIdentifier('array'),
+                factory.createToken(ts.SyntaxKind.QuestionDotToken),
+                factory.createIdentifier(propValue),
+              )
+              : logicalAnd
+
+            return factory.createPropertyAssignment(factory.createIdentifier(entries.filter(e => !!e.propValue).length === 1 ? 'array' : propName), propExpr);
+          }),
+        true,
+      ),
+    ),
+    // factory.createJsxExpression(
+    //   undefined,
+    //   factory.createIdentifier("array") // The value is an identifier 'array'
+    // )
   );
 }
+
+// export function mkArrayOverridesAttribute(instanceArrayOverrides: CompContext['instanceArrayOverrides'], id: string) {
+//   return factory.createJsxAttribute(
+//     factory.createIdentifier("array"), // Prop name 'array'
+//     factory.createJsxExpression(
+//       undefined,
+//       factory.createIdentifier("array") // The value is an identifier 'array'
+//     )
+//   );
+// }
 
 export function mkTextOverridesAttribute(textOverrides: CompContext['instanceTextOverrides']) {
   // Possible improvements: default values (cf other overrides like hidings)
