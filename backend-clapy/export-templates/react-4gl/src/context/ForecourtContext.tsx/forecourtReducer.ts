@@ -20,6 +20,10 @@ type ForecourtAction =
       payload: LoginInfo[];
     }
   | {
+      type: 'setLogin';
+      payload: number;
+    }
+  | {
       type: 'setSettings';
       payload: SettingsPar[];
     }
@@ -124,8 +128,7 @@ export const forecourtReducer = (state: ForecourtState, action: ForecourtAction)
           ...state.ticket,
           Transactions: action.payload.flatMap(fuellingPointElement => {
             return fuellingPointElement.Transactions.filter(
-              transaction =>
-                transaction.TransactionLockId === state.posId,
+              transaction => transaction.TransactionLockId === state.posId,
             );
           }),
         },
@@ -134,8 +137,14 @@ export const forecourtReducer = (state: ForecourtState, action: ForecourtAction)
       // Se asigna el primer personal de la colección
       return {
         ...state,
-        loginActive: action.payload[0].IdPersonal,
+        // loginActive: action.payload[0].IdPersonal,
         loginInfo: [...action.payload],
+      };
+    case 'setLogin':
+      // Se asigna el primer personal de la colección
+      return {
+        ...state,
+        loginActive: action.payload,
       };
     case 'setCustomerList':
       return {
@@ -230,7 +239,8 @@ export const forecourtReducer = (state: ForecourtState, action: ForecourtAction)
         ticket: {
           ...state.ticket,
           Transactions:
-            action.payload.transaction.TransactionLockId !== state.posId? state.ticket.Transactions.filter(
+            action.payload.transaction.TransactionLockId !== state.posId
+              ? state.ticket.Transactions.filter(
                   transacion =>
                     transacion.TransactionSequenceNumber !== action.payload.transaction.TransactionSequenceNumber ||
                     (isPrepay(transacion) && transacion.FuellingPointId !== action.payload.transaction.FuellingPointId),
@@ -246,11 +256,14 @@ export const forecourtReducer = (state: ForecourtState, action: ForecourtAction)
           Customer: action.payload.customer,
           Transactions: state.ticket.Transactions.map(transaction => {
             // Buscar la transacción correspondiente en el payload
-            const updatedTransaction = action.payload.transactions.find(t =>
-              isPrepay(t)
-                ? t.TransactionSequenceNumber === transaction.TransactionSequenceNumber
-                : t.FuellingPointId === transaction.FuellingPointId,
+            const updatedTransaction = action.payload.transactions.find(
+              t => t.TransactionSequenceNumber === transaction.TransactionSequenceNumber,
             );
+            // const updatedTransaction = action.payload.transactions.find(t =>
+            //   isPrepay(t)
+            //     ? t.TransactionSequenceNumber === transaction.TransactionSequenceNumber
+            //     : t.FuellingPointId === transaction.FuellingPointId,
+            // );
             // Si se encuentra, actualizar la PromotionList
             if (updatedTransaction) {
               return {

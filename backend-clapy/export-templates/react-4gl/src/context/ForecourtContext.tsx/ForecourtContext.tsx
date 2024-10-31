@@ -8,19 +8,22 @@ import {
   LoginInfo,
   Transaction,
 } from '../../interfaces/ForecourtInterfaces';
+import { GradeOption } from '../../interfaces/ForecourtInterfaces';
 import { appStateValues, ForecourtState } from '../../interfaces/StateInterfaces';
 import { Customer } from '../../interfaces/TicketInterfaces';
-import { GradeOption } from '../../interfaces/ForecourtInterfaces';
 
 export interface ForecourtContextProps {
   forecourtState: ForecourtState;
-  selectedFp: FuellingPointElement| undefined;
-  setSelectedFp: (fp: FuellingPointElement| undefined)=>void;
-  selectedGo: GradeOption| undefined;
-  setSelectedGo: (fp: GradeOption| undefined)=>void;
+  selectedFp: FuellingPointElement | undefined;
+  setSelectedFp: (fp: FuellingPointElement | undefined) => void;
+  selectedGo: GradeOption | undefined;
+  setSelectedGo: (fp: GradeOption | undefined) => void;
+  payMethod: { method: string; cash?: number } | undefined;
+  setPayMethod: (fp: { method: string; cash?: number } | undefined) => void;
   websocketTpvConnection: ReturnType<typeof useWebsocketTpvConnection>;
   setForecourtConfiguration: (forecourtConfiguration: FuellingPointElement[]) => void;
   setLoginInfo: (loginInfo: LoginInfo[]) => void;
+  setLogin: (login: number) => void;
   setCustomerList: (customerList: Customer[]) => void;
   setCustomerTicket: (customerAddedResponse: CustomerAddedResponse) => void;
   deleteCustomerTicket: () => void;
@@ -31,6 +34,8 @@ export interface ForecourtContextProps {
   removeLineFromTicket: (transaction: Transaction) => void;
   changeAppState: (appState: appStateValues) => void;
   changeInformationMessage: (infoMessage: InformationMessage) => void;
+  camera: () => void,
+  lastCameraCode: string | undefined
 }
 
 export const ForecourtContext = createContext<ForecourtContextProps>({} as ForecourtContextProps);

@@ -218,10 +218,11 @@ export async function exportCode({ root, components, svgs, images, styles, extra
     // Para los figma comp with absolute pos and bottom 0 and fill with (bottomTab o header)
     Object.keys(csbFiles).filter(k => k.includes('.module.css')).forEach(k => {
       const ast = csstree.parse(csbFiles[k].content);
+      const compName = k.split('/').slice(-1)[0].split('.module.css')[0]
       // Traverse the AST to find the width and height properties
       csstree.walk(ast, function (node, item, list) {
 
-        if (node.type === 'Rule' && node.prelude.type === 'SelectorList') {
+        if (node && node.type === 'Rule' && node.prelude.type === 'SelectorList') {
           // Check if the selector matches the class you want to remove
           const selector = csstree.generate(node.prelude);
           if (selector.split('.').length > 3) {
@@ -231,7 +232,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
         }
 
         // Find the specific class declarations
-        if (node.type === 'Rule' && node.prelude.type === 'SelectorList') {
+        if (node && node.type === 'Rule' && node.prelude.type === 'SelectorList') {
           const selector = csstree.generate(node.prelude);
 
           // Log which class we're inspecting
@@ -246,7 +247,7 @@ export async function exportCode({ root, components, svgs, images, styles, extra
           let bgInitial = false
           // Traverse the declarations in the block
           node.block.children.forEach(declaration => {
-            const isDeclaration = declaration.type === 'Declaration'
+            const isDeclaration = declaration && declaration.type === 'Declaration'
             const value = isDeclaration && csstree.generate(declaration.value)
             absolute = absolute || isDeclaration && declaration.property === 'position' && value === 'absolute'
             bottom = bottom || isDeclaration && declaration.property === 'bottom'
@@ -300,7 +301,30 @@ export async function exportCode({ root, components, svgs, images, styles, extra
             }
           })
         }
+
+        if (compName.includes('Spinner')){
+          if (node && node.type === 'Rule' && node.prelude.type === 'SelectorList') {
+            // Check if the selector matches the class you want to add animation
+            const selector = csstree.generate(node.prelude);
+            if (selector.includes('.vector')) {
+              if (node.block && node.block.children) {
+                const animationDeclaration = csstree.parse('animation: myAnimation 2s ease-in-out infinite;');
+                node.block.children.push(animationDeclaration);
+              } else {
+                console.error('Node block or children are undefined');
+              }
+            }
+          }
+        }
       });
+
+      if (compName.includes('Spinner')) {// Create the spin keyframes
+        const keyframesRule = csstree.parse('@keyframes myAnimation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }')
+
+        // Append the spin keyframes to the AST, not to the node's block
+        ast.children.appendData(keyframesRule);
+      }
+
       // Generate the modified CSS back into a string
       const modifiedCss = csstree.generate(ast);
       csbFiles[k].content = modifiedCss

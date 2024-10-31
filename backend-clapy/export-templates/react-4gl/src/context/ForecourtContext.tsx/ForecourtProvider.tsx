@@ -1,5 +1,7 @@
 import { useEffect, useReducer, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { useNavigationManager } from '../../hooks/useNavegationManager';
 import { useWebsocketTpvConnection } from '../../hooks/useWebsocketTpvConnection';
 import {
   CustomerAddedResponse,
@@ -12,12 +14,13 @@ import {
   TransactionFinished,
   TransactionPartial,
 } from '../../interfaces/ForecourtInterfaces';
+import { GradeOption } from '../../interfaces/ForecourtInterfaces';
 import { IMessage } from '../../interfaces/GlobalInterfaces';
 import { appStateValues, ForecourtState } from '../../interfaces/StateInterfaces';
 import { Customer } from '../../interfaces/TicketInterfaces';
+import { useRouteParams } from '../../routes/useRouteParams';
 import { ForecourtContext } from './ForecourtContext';
 import { forecourtReducer } from './forecourtReducer';
-import { GradeOption } from '../../interfaces/ForecourtInterfaces';
 
 interface props {
   children: JSX.Element | JSX.Element[];
@@ -42,6 +45,26 @@ export const ForecourtProvider = ({ children }: props) => {
   const [forecourtState, dispatch] = useReducer(forecourtReducer, INITIAL_STATE);
   const [selectedFp, setSelectedFp] = useState<FuellingPointElement | undefined>(undefined);
   const [selectedGo, setSelectedGo] = useState<GradeOption | undefined>(undefined);
+  const [payMethod, setPayMethod] = useState<{ method: string; cash?: number } | undefined>(undefined);
+
+  const camera = () => console.info('camera')
+  const [lastCameraCode, setLastCameraCode] = useState('')
+  useEffect(() => {
+    const messageListener = window.addEventListener('message', (nativeEvent) => {
+      console.log('addEventListener: ' + JSON.stringify(nativeEvent?.data))
+      if (nativeEvent.data.action === 'scannerCodeResult') {
+        let obj = { scannerCodeResult: '' }
+        try { obj = nativeEvent.data.payload } catch { }
+        console.log(obj.scannerCodeResult)
+        setLastCameraCode(obj.scannerCodeResult)
+      }
+    })
+    return messageListener;
+  }, [])
+
+  useEffect(() => {
+    setSelectedFp(forecourtState.fuellingPointElements.find(fp => fp.FuellingPointId === selectedFp?.FuellingPointId));
+  }, [forecourtState]); // si no actualizamos los locked suministros no se actualizan
 
   const setForecourtConfiguration = (forecourtConfiguration: FuellingPointElement[]) => {
     dispatch({
@@ -54,6 +77,13 @@ export const ForecourtProvider = ({ children }: props) => {
     dispatch({
       type: 'setLoginInfo',
       payload: loginInfo,
+    });
+  };
+
+  const setLogin = (login: number) => {
+    dispatch({
+      type: 'setLogin',
+      payload: login,
     });
   };
 
@@ -177,7 +207,7 @@ export const ForecourtProvider = ({ children }: props) => {
    */
   const informationMessage = (informationMessage: InformationMessage) => {
     forecourtState.posId === informationMessage.PosId &&
-      forecourtState.appState === 'payment' &&
+      // forecourtState.appState === 'payment' &&
       changeInformationMessage(informationMessage);
   };
 
@@ -255,10 +285,14 @@ export const ForecourtProvider = ({ children }: props) => {
         forecourtState,
         selectedFp,
         setSelectedFp,
-        selectedGo, setSelectedGo,
+        selectedGo,
+        setSelectedGo,
+        payMethod,
+        setPayMethod,
         websocketTpvConnection,
         setForecourtConfiguration,
         setLoginInfo,
+        setLogin,
         setCustomerList,
         setCustomerTicket,
         deleteCustomerTicket,
@@ -269,6 +303,8 @@ export const ForecourtProvider = ({ children }: props) => {
         changeInformationMessage,
         changeFuellingPointLockedFlag,
         changeFuellingPointPresetFlag,
+        camera,
+        lastCameraCode
       }}
     >
       {children}
